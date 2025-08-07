@@ -1,0 +1,7 @@
+services:
+  api:
+    build: .
+    ports:
+      - "7800:7800"
+    env_file:
+      - .env

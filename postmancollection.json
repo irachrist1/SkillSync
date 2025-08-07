@@ -1,0 +1,125 @@
+{
+	"info": {
+		"_postman_id": "a8f5b4a1-1b3a-4b1e-8b0a-9b8d7c6e3c2d",
+		"name": "SkillSync skillsync Tests (Port 7800)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Match Jobs",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"skills\": [\"html\", \"css\", \"javascript\"]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:7800/skillsync/match-jobs",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7800",
+					"path": [
+						"skillsync",
+						"match-jobs"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Opportunity Gap Analysis",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"skills\": [\"html\", \"css\", \"javascript\"]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:7800/skillsync/opportunity-gap-analysis",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7800",
+					"path": [
+						"skillsync",
+						"opportunity-gap-analysis"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Salary Impact Calculator",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"skills\": [\"html\", \"css\", \"javascript\"],\n    \"new_skill\": \"react\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:7800/skillsync/salary-impact-calculator",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7800",
+					"path": [
+						"skillsync",
+						"salary-impact-calculator"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Generate Curriculum",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"skills_to_learn\": [\"react\", \"git\"]\n}"
+				},
+				"url": {
+					"raw": "http://localhost:7800/skillsync/generate-curriculum",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7800",
+					"path": [
+						"skillsync",
+						"generate-curriculum"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
