@@ -158,3 +158,48 @@ Your response should be in JSON format, with the following structure:
 
     return {"insights": json_response}
 
+
+@router.post("/coach-chat")
+def coach_chat(request: schemas.ChatRequest):
+    """
+    Lightweight chat for tutor/coach/mentor personas grounded in the user's analysis JSON.
+    Returns a structured response with short answer and 3 suggested follow-ups.
+    """
+    persona = request.role or "coach"
+    prompt = f"""You are a {persona} for Rwanda job seekers. Answer concisely (<=120 words).
+User analysis JSON: {json.dumps(request.analysis)}
+Question: {request.question}
+Return pure JSON:
+{{
+  "answer": "...",
+  "follow_ups": ["...", "...", "..."]
+}}
+"""
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    response = model.generate_content(prompt)
+    data = json.loads(response.text.replace("```json", "").replace("```", ""))
+    return {"chat": data}
+
+
+@router.post("/generate-course")
+def generate_course(request: schemas.GenerateCourseRequest):
+    """
+    Generates a compact course outline (modules->lessons->resources) for a target skill
+    with links (can include YouTube) and practical projects.
+    """
+    level = request.level or "beginner"
+    prompt = f"""You are a curriculum generator for Rwanda's market.
+Create a 2-week intensive course for skill: {request.target_skill} (level: {level}).
+Return JSON with 4-6 modules, each with lessons and resource links (prefer free/YouTube when useful), and one capstone project.
+Schema:
+{{
+  "title": "",
+  "duration": "2 weeks",
+  "modules": [{{"title": "", "lessons": [{{"title": "", "resource": "url"}}]}}],
+  "project": {{"title": "", "brief": ""}}
+}}
+"""
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    response = model.generate_content(prompt)
+    data = json.loads(response.text.replace("```json", "").replace("```", ""))
+    return {"course": data}

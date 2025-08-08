@@ -40,6 +40,36 @@ JOBS = [
         "title": "Fintech Product Manager",
         "salaryRange": {"min": 800000, "max": 1500000, "currency": "RWF"},
         "required_skills": ["product management", "fintech", "agile", "data analysis"]
+    },
+    {
+        "id": 8,
+        "title": "IT Support Technician",
+        "salaryRange": {"min": 250000, "max": 400000, "currency": "RWF"},
+        "required_skills": ["hardware", "troubleshooting", "networking basics"]
+    },
+    {
+        "id": 9,
+        "title": "Junior Data Analyst (Banking)",
+        "salaryRange": {"min": 450000, "max": 650000, "currency": "RWF"},
+        "required_skills": ["sql", "excel", "powerbi"]
+    },
+    {
+        "id": 10,
+        "title": "Content & SEO Specialist",
+        "salaryRange": {"min": 300000, "max": 500000, "currency": "RWF"},
+        "required_skills": ["seo", "content marketing", "google analytics"]
+    },
+    {
+        "id": 11,
+        "title": "Mobile Money Integration Dev",
+        "salaryRange": {"min": 700000, "max": 1200000, "currency": "RWF"},
+        "required_skills": ["javascript", "node", "api integration", "fintech"]
+    },
+    {
+        "id": 12,
+        "title": "Frontend Developer (React)",
+        "salaryRange": {"min": 500000, "max": 800000, "currency": "RWF"},
+        "required_skills": ["html", "css", "javascript", "react", "git"]
     }
 ]
 

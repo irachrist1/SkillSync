@@ -56,6 +56,8 @@ async function postJson(path: string, body: any) {
   if (path.includes('salary-impact-calculator')) { fallbackUsed = true; return stubSalaryImpact(body.skills || [], body.new_skill || ''); }
   if (path.includes('generate-curriculum')) { fallbackUsed = true; return stubCurriculum(body.skills_to_learn || []); }
   if (path.includes('market-insights')) { fallbackUsed = true; return stubMarketInsights(body.skills || []); }
+  if (path.includes('coach-chat')) { fallbackUsed = true; return stubCoachChat(body); }
+  if (path.includes('generate-course')) { fallbackUsed = true; return stubGenerateCourse(body); }
   throw lastErr || new Error('Unknown error');
 }
 
@@ -124,13 +126,35 @@ function stubCurriculum(skills_to_learn: string[]) {
   return Promise.resolve({ curriculum: { learning_path } });
 }
 
-function stubMarketInsights(skills: string[]) {
-  const insights = [
+function stubMarketInsights(_skills: string[]) {
+  const insights: string[] = [
     'Front-end roles are growing in Rwanda with demand for React and TypeScript.',
     'Knowledge of Git and collaborative workflows is expected for junior roles.',
     'Pay growth is highest for candidates who can ship production-ready UI.',
   ];
   return Promise.resolve({ insights: { insights } });
+}
+
+function stubCoachChat(body: any) {
+  const answer = body?.question?.toLowerCase().includes('next')
+    ? 'Based on your analysis, learn React next to unlock 400–600k RWF roles. Start with components, hooks, and a mini CRUD app.'
+    : 'Focus on one high‑ROI skill, schedule 45 minutes daily, and ship one small project per week.';
+  return Promise.resolve({ chat: { answer, follow_ups: ['Which skill unlocks the most jobs?', 'Give me a 2‑week plan.', 'How do I build a portfolio project?'] } });
+}
+
+function stubGenerateCourse(body: any) {
+  const skill = body?.target_skill || 'React';
+  return Promise.resolve({
+    course: {
+      title: `${skill} in 2 Weeks (Practical)`,
+      duration: '2 weeks',
+      modules: [
+        { title: 'Foundations', lessons: [{ title: 'Intro', resource: 'https://www.freecodecamp.org/' }] },
+        { title: 'Core Concepts', lessons: [{ title: 'Hands‑on', resource: 'https://www.youtube.com' }] },
+      ],
+      project: { title: `${skill} Mini App`, brief: 'Build and deploy a small app demonstrating key concepts.' }
+    }
+  });
 }
 
 // ---- Public API
@@ -149,6 +173,12 @@ export const Services = {
   },
   marketInsights(skills: string[]) {
     return useBackend() ? postJson('/skillsync/market-insights', { skills }) : stubMarketInsights(skills);
+  },
+  coachChat(role: string, analysis: any, question: string) {
+    return useBackend() ? postJson('/skillsync/coach-chat', { role, analysis, question }) : stubCoachChat({ role, analysis, question });
+  },
+  generateCourse(target_skill: string, level?: string) {
+    return useBackend() ? postJson('/skillsync/generate-course', { target_skill, level }) : stubGenerateCourse({ target_skill, level });
   },
   useBackend,
   resetFallbackFlag,

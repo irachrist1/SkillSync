@@ -10,6 +10,8 @@ import { JobMatches } from '@/components/JobMatches';
 import { LearningPath } from '@/components/LearningPath';
 import { NextLevelJobs } from '@/components/NextLevelJobs';
 import { GuidedDemo } from '@/components/GuidedDemo';
+import { CoachChat } from '@/components/CoachChat';
+import { CourseOutline } from '@/components/CourseOutline';
 import { UserSkill, UserProfile, AIAnalysis, JobOpportunity } from '@/types';
 import { LocalStorageManager } from '@/lib/localStorage';
 import { Services } from '@/lib/services';
@@ -27,6 +29,8 @@ export default function HomePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDemo, setShowDemo] = useState(false);
+  const [showCoach, setShowCoach] = useState(false);
+  const [generatedCourse, setGeneratedCourse] = useState<any | null>(null);
 
   // Load initial step from query/local storage on mount
   useEffect(() => {
@@ -459,6 +463,26 @@ export default function HomePage() {
                     <div className="text-xs text-gray-600">Skills to Learn</div>
                   </div>
                 </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setShowCoach(true)}>Ask a Coach</Button>
+                  <Button size="sm" onClick={() => {
+                    try {
+                      const blob = new Blob([JSON.stringify(aiAnalysis, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `skillsync-analysis-${new Date().toISOString()}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    } catch {}
+                  }}>Export Findings</Button>
+                  <Button size="sm" variant="secondary" onClick={async () => {
+                    const topSkill = (aiAnalysis.recommendations.skillGaps?.[0]?.skill || 'React') as string;
+                    const res = await Services.generateCourse(topSkill, 'beginner');
+                    setGeneratedCourse(res.course || null);
+                    setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
+                  }}>Generate Full Course</Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -481,12 +505,14 @@ export default function HomePage() {
           </Card>
 
           <LearningPath learningPath={aiAnalysis.recommendations.learningPath} />
+          {generatedCourse && <CourseOutline course={generatedCourse} />}
 
           <NextLevelJobs 
             jobs={aiAnalysis.recommendations.nextLevelOpportunities}
             userSkills={userSkills}
           />
         </div>
+        <CoachChat open={showCoach} onClose={() => setShowCoach(false)} analysis={aiAnalysis} />
     </div>
   );
 }
