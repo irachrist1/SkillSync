@@ -1,0 +1,25 @@
+services:
+  backend_api:
+    build: ./skillsyncAPI
+    ports:
+      - "7800:7800"
+    env_file:
+      - ./skillsyncAPI/.env
+    networks:
+      - skillsync_network
+
+  frontend_app:
+    build: ./skillsync-ai
+    ports:
+      - "3000:3000"
+    environment:
+      # This URL points to the backend service within the Docker network
+      - NEXT_PUBLIC_API_URL=http://backend_api:7800/skillsync
+    networks:
+      - skillsync_network
+    depends_on:
+      - backend_api
+
+networks:
+  skillsync_network:
+    driver: bridge

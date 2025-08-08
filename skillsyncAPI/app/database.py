@@ -2,43 +2,43 @@ JOBS = [
     {
         "id": 1,
         "title": "Entry-level Web Developer",
-        "salary_range_rwf": [150000, 300000],
+        "salaryRange": {"min": 150000, "max": 300000, "currency": "RWF"},
         "required_skills": ["html", "css", "javascript"]
     },
     {
         "id": 2,
         "title": "Frontend Developer (React)",
-        "salary_range_rwf": [400000, 600000],
+        "salaryRange": {"min": 400000, "max": 600000, "currency": "RWF"},
         "required_skills": ["html", "css", "javascript", "react", "git"]
     },
     {
         "id": 3,
         "title": "Backend Developer (Python)",
-        "salary_range_rwf": [500000, 800000],
+        "salaryRange": {"min": 500000, "max": 800000, "currency": "RWF"},
         "required_skills": ["python", "fastapi", "sql", "docker", "git"]
     },
     {
         "id": 4,
         "title": "Full-stack Developer",
-        "salary_range_rwf": [600000, 1000000],
+        "salaryRange": {"min": 600000, "max": 1000000, "currency": "RWF"},
         "required_skills": ["html", "css", "javascript", "react", "python", "fastapi", "sql", "git"]
     },
     {
         "id": 5,
         "title": "Data Analyst",
-        "salary_range_rwf": [400000, 700000],
+        "salaryRange": {"min": 400000, "max": 700000, "currency": "RWF"},
         "required_skills": ["python", "pandas", "numpy", "sql", "powerbi"]
     },
     {
         "id": 6,
         "title": "Digital Marketing Specialist",
-        "salary_range_rwf": [300000, 500000],
+        "salaryRange": {"min": 300000, "max": 500000, "currency": "RWF"},
         "required_skills": ["seo", "sem", "social media marketing", "google analytics"]
     },
     {
         "id": 7,
         "title": "Fintech Product Manager",
-        "salary_range_rwf": [800000, 1500000],
+        "salaryRange": {"min": 800000, "max": 1500000, "currency": "RWF"},
         "required_skills": ["product management", "fintech", "agile", "data analysis"]
     }
 ]

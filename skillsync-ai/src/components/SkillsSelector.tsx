@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, X, Filter } from 'lucide-react';
+import { Search, Plus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +47,7 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
     );
   };
 
-  const addSkill = (skillName: string, categoryId: string) => {
+  const addSkill = (skillName: string) => {
     setShowLevelSelector(skillName);
   };
 
@@ -203,7 +203,7 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
                     {availableSkills.map((skillName) => (
                       <button
                         key={skillName}
-                        onClick={() => addSkill(skillName, category.id)}
+                        onClick={() => addSkill(skillName)}
                         className="inline-flex items-center gap-1 px-3 py-2 text-sm bg-gray-100 hover:bg-blue-100 rounded-md transition-colors"
                       >
                         <Plus className="w-3 h-3" />

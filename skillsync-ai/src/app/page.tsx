@@ -7,10 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LoadingState } from '@/components/LoadingSpinner';
 import { SkillsSelector } from '@/components/SkillsSelector';
 import { JobMatches } from '@/components/JobMatches';
+import { LearningPath } from '@/components/LearningPath';
+import { NextLevelJobs } from '@/components/NextLevelJobs';
 import { UserSkill, UserProfile, AIAnalysis } from '@/types';
-import { RWANDA_JOB_OPPORTUNITIES, RWANDA_MARKET_INSIGHTS } from '@/data/rwanda-skills';
 import { LocalStorageManager } from '@/lib/localStorage';
-import { GeminiCareerAnalyst } from '@/lib/gemini';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7800';
 
 export default function HomePage() {
   const [currentStep, setCurrentStep] = useState<'welcome' | 'skills' | 'analysis'>('welcome');
@@ -70,49 +72,80 @@ export default function HomePage() {
     setError(null);
 
     try {
-      // For now, use mock analysis since API key might not be set
-      // const analyst = new GeminiCareerAnalyst();
-      // const recommendation = await analyst.analyzeCareerOpportunities(userProfile, RWANDA_JOB_OPPORTUNITIES);
-      
-      // Mock analysis for demo purposes
-      const mockAnalysis: AIAnalysis = {
-        userProfile,
-        currentOpportunities: RWANDA_JOB_OPPORTUNITIES.slice(0, 3),
+      // Call backend API to match jobs
+      const matchJobsResponse = await fetch(`${API_URL}/skillsync/match-jobs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()) }),
+      });
+      const matchedJobsData = await matchJobsResponse.json();
+
+      // Call backend API for opportunity gap analysis
+      const gapAnalysisResponse = await fetch(`${API_URL}/skillsync/opportunity-gap-analysis`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()) }),
+      });
+      const gapAnalysisData = await gapAnalysisResponse.json();
+
+      // Call backend API for salary impact calculator
+      const salaryImpactResponse = await fetch(`${API_URL}/skillsync/salary-impact-calculator`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()), new_skill: gapAnalysisData.analysis.recommendations[0]?.skill || '' }),
+      });
+      const salaryImpactData = await salaryImpactResponse.json();
+
+      // Call backend API for curriculum generation
+      const curriculumResponse = await fetch(`${API_URL}/skillsync/generate-curriculum`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skills_to_learn: gapAnalysisData.analysis.recommendations.map((r: any) => r.skill) }),
+      });
+      const curriculumData = await curriculumResponse.json();
+
+      // Call backend API for market insights
+      const marketInsightsResponse = await fetch(`${API_URL}/skillsync/market-insights`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()) }),
+      });
+      const marketInsightsData = await marketInsightsResponse.json();
+
+      // Calculate current salary
+      const currentSalary = matchedJobsData.qualified_jobs.reduce((max: number, job: any) => Math.max(max, job.salaryRange.max), 0);
+
+      // Construct AIAnalysis object from API responses
+      const newAIAnalysis: AIAnalysis = {
+        userProfile: userProfile,
+        currentOpportunities: matchedJobsData.qualified_jobs || [],
         recommendations: {
-          currentOpportunities: RWANDA_JOB_OPPORTUNITIES.slice(0, 3),
-          skillGaps: [
-            {
-              skill: 'React',
-              importance: 'high',
-              timeToLearn: '4-6 weeks',
-              salaryImpact: 150000,
-              opportunities: 8,
-              learningResources: []
-            }
-          ],
-          nextLevelOpportunities: RWANDA_JOB_OPPORTUNITIES.slice(3),
-          learningPath: {
-            id: 'path-react',
-            title: 'React Development Path',
-            description: 'Master React for Rwanda job market',
-            targetSkill: 'React',
-            totalDuration: '6 weeks',
-            phases: [],
-            projects: [],
-            milestones: []
-          },
+          currentOpportunities: matchedJobsData.qualified_jobs || [],
+          skillGaps: gapAnalysisData.analysis.recommendations || [],
+          nextLevelOpportunities: [],
+          learningPath: curriculumData.curriculum.learning_path || [],
           salaryProjection: {
-            current: 300000,
-            potential: 450000,
+            current: currentSalary,
+            potential: currentSalary + salaryImpactData.potential_salary_increase_rwf,
             timeframe: '6 months'
           }
         },
-        marketInsights: RWANDA_MARKET_INSIGHTS,
+        marketInsights: marketInsightsData.insights.insights || [],
         lastAnalyzed: new Date()
       };
 
-      setAiAnalysis(mockAnalysis);
-      LocalStorageManager.saveAIAnalysis(mockAnalysis);
+      setAiAnalysis(newAIAnalysis);
+      LocalStorageManager.saveAIAnalysis(newAIAnalysis);
       setCurrentStep('analysis');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze your skills. Please try again.');
@@ -309,7 +342,7 @@ export default function HomePage() {
 
         <div className="space-y-8">
           <JobMatches 
-            jobs={RWANDA_JOB_OPPORTUNITIES}
+            jobs={aiAnalysis.recommendations.currentOpportunities}
             userSkills={userSkills}
           />
 
@@ -359,6 +392,13 @@ export default function HomePage() {
               </ul>
             </CardContent>
           </Card>
+
+          <LearningPath learningPath={aiAnalysis.recommendations.learningPath} />
+
+          <NextLevelJobs 
+            jobs={aiAnalysis.recommendations.nextLevelOpportunities}
+            userSkills={userSkills}
+          />
         </div>
     </div>
   );

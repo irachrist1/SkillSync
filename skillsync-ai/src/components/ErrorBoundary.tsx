@@ -12,24 +12,24 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error?: Error;
-  errorInfo?: React.ErrorInfo;
+  error: Error | null;
+  errorInfo: React.ErrorInfo | null;
 }
 
 interface ErrorFallbackProps {
-  error?: Error;
+  error: Error | null;
   resetError: () => void;
-  errorInfo?: React.ErrorInfo;
+  _errorInfo: React.ErrorInfo | null;
 }
 
 class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, errorInfo: null };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -38,7 +38,7 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 
   resetError = () => {
-    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+    this.setState({ hasError: false, error: null, errorInfo: null });
   };
 
   render() {
@@ -47,7 +47,7 @@ class ErrorBoundary extends React.Component<Props, State> {
       return (
         <FallbackComponent
           error={this.state.error}
-          errorInfo={this.state.errorInfo}
+          _errorInfo={this.state.errorInfo}
           resetError={this.resetError}
         />
       );
@@ -57,7 +57,7 @@ class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-function DefaultErrorFallback({ error, resetError, errorInfo }: ErrorFallbackProps) {
+function DefaultErrorFallback({ error, resetError }: ErrorFallbackProps) {
   const isDev = process.env.NODE_ENV === 'development';
 
   return (

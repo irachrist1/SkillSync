@@ -1,4 +1,5 @@
 import os
+import json
 import google.generativeai as genai
 from fastapi import APIRouter
 from dotenv import load_dotenv
@@ -59,7 +60,10 @@ Your response should be in JSON format, with the following structure:
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
     response = model.generate_content(prompt)
 
-    return {"analysis": response.text}
+    # Extract the JSON from the response
+    json_response = json.loads(response.text.replace("```json", "").replace("```", ""))
+
+    return {"analysis": json_response}
 
 @router.post("/salary-impact-calculator")
 def salary_impact_calculator(request: schemas.SalaryImpactRequest):
@@ -70,19 +74,19 @@ def salary_impact_calculator(request: schemas.SalaryImpactRequest):
     current_max_salary = 0
     for job in database.JOBS:
         if set(job["required_skills"]).issubset(set(request.skills)):
-            if job["salary_range_rwf"][1] > current_max_salary:
-                current_max_salary = job["salary_range_rwf"][1]
+            if job["salaryRange"]["max"] > current_max_salary:
+                current_max_salary = job["salaryRange"]["max"]
 
     # Find the new maximum potential salary with the new skill
     new_skills = request.skills + [request.new_skill]
     new_max_salary = 0
     for job in database.JOBS:
         if set(job["required_skills"]).issubset(set(new_skills)):
-            if job["salary_range_rwf"][1] > new_max_salary:
-                new_max_salary = job["salary_range_rwf"][1]
+            if job["salaryRange"]["max"] > new_max_salary:
+                new_max_salary = job["salaryRange"]["max"]
 
-    # Calculate the potential salary increase
-    salary_increase = new_max_salary - current_max_salary
+    # Calculate the potential salary increase, ensuring it's not negative
+    salary_increase = max(0, new_max_salary - current_max_salary)
 
     return {"potential_salary_increase_rwf": salary_increase}
 
@@ -116,5 +120,41 @@ Your response should be in JSON format, with the following structure:
     model = genai.GenerativeModel('gemini-1.5-flash-latest')
     response = model.generate_content(prompt)
 
-    return {"curriculum": response.text}
+    # Extract the JSON from the response
+    json_response = json.loads(response.text.replace("```json", "").replace("```", ""))
+
+    return {"curriculum": json_response}
+
+
+@router.post("/market-insights")
+def market_insights(request: schemas.Skills):
+    """
+    Generates market insights based on a user's skills.
+    """
+    # Create a prompt for the Gemini API
+    prompt = f"""You are a Rwandan job market analyst.
+
+A user has the following skills: {request.skills}.
+
+Based on these skills, provide 3-4 key insights about the current job market in Rwanda. 
+Focus on trends, opportunities, and potential challenges.
+
+Your response should be in JSON format, with the following structure:
+{{
+  "insights": [
+    "<insight_1>",
+    "<insight_2>",
+    "<insight_3>"
+  ]
+}}
+"""
+
+    # Call the Gemini API
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    response = model.generate_content(prompt)
+
+    # Extract the JSON from the response
+    json_response = json.loads(response.text.replace("```json", "").replace("```", ""))
+
+    return {"insights": json_response}
 

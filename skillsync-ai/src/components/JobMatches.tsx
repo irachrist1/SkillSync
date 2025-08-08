@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { JobOpportunity, UserSkill } from '@/types';
-import { formatSalary, calculateJobMatchScore, getMatchCategory, formatTimeAgo } from '@/lib/utils';
+import { formatSalary, getMatchCategory, formatTimeAgo, calculateJobMatchScore } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 interface JobMatchesProps {

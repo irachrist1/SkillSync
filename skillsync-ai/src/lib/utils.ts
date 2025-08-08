@@ -27,28 +27,7 @@ export function formatSalary(amount: number, currency: 'RWF' | 'USD' = 'RWF'): s
   }).format(amount);
 }
 
-// Job matching utilities
-export function calculateJobMatchScore(userSkills: UserSkill[], job: JobOpportunity): number {
-  const userSkillNames = userSkills.map(s => s.name.toLowerCase());
-  
-  // Calculate required skills match (weighted 70%)
-  const requiredMatch = job.requiredSkills.filter(skill => 
-    userSkillNames.some(userSkill => 
-      userSkill.includes(skill.toLowerCase()) || skill.toLowerCase().includes(userSkill)
-    )
-  ).length / job.requiredSkills.length;
-  
-  // Calculate preferred skills match (weighted 30%)
-  const preferredMatch = job.preferredSkills 
-    ? job.preferredSkills.filter(skill => 
-        userSkillNames.some(userSkill => 
-          userSkill.includes(skill.toLowerCase()) || skill.toLowerCase().includes(userSkill)
-        )
-      ).length / job.preferredSkills.length
-    : 0;
-  
-  return (requiredMatch * 0.7) + (preferredMatch * 0.3);
-}
+
 
 export function getMatchCategory(score: number): {
   category: 'excellent' | 'good' | 'fair' | 'poor';
@@ -183,6 +162,42 @@ export function formatBytes(bytes: number): string {
 // Rwanda-specific utilities
 export function getRwandaTimeZone(): string {
   return 'Africa/Kigali';
+}
+
+export function calculateJobMatchScore(userSkills: UserSkill[], job: JobOpportunity): number {
+  const { requiredSkills, preferredSkills } = job;
+  if (!requiredSkills || requiredSkills.length === 0) {
+    return 1; // Or some other default for jobs with no required skills
+  }
+
+  const userSkillNames = userSkills.map(s => s.name.toLowerCase());
+  
+  let score = 0;
+  const requiredWeight = 0.7;
+  const preferredWeight = 0.3;
+
+  // Calculate score for required skills
+  const requiredMet = requiredSkills.filter(skill => 
+    userSkillNames.some(userSkill => 
+      userSkill.includes(skill.toLowerCase()) || skill.toLowerCase().includes(userSkill)
+    )
+  ).length;
+  score += (requiredMet / requiredSkills.length) * requiredWeight;
+
+  // Calculate score for preferred skills
+  if (preferredSkills && preferredSkills.length > 0) {
+    const preferredMet = preferredSkills.filter(skill => 
+      userSkillNames.some(userSkill => 
+        userSkill.includes(skill.toLowerCase()) || skill.toLowerCase().includes(userSkill)
+      )
+    ).length;
+    score += (preferredMet / preferredSkills.length) * preferredWeight;
+  } else {
+    // If no preferred skills, give the remaining weight to required skills
+    score += (requiredMet / requiredSkills.length) * preferredWeight;
+  }
+  
+  return Math.min(score, 1); // Ensure score doesn't exceed 1
 }
 
 export function formatRwandaDate(date: Date): string {

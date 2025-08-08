@@ -9,7 +9,7 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   env: {
-    CUSTOM_KEY: 'my-value',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
   // Optimize for production
   swcMinify: true,

@@ -54,11 +54,17 @@ export interface SkillGap {
   learningResources: LearningResource[];
 }
 
+export interface LearningPathItem {
+  skill: string;
+  resource: string;
+  project: string;
+}
+
 export interface LearningRecommendation {
   currentOpportunities: JobOpportunity[];
   skillGaps: SkillGap[];
   nextLevelOpportunities: JobOpportunity[];
-  learningPath: LearningPath;
+  learningPath: LearningPathItem[];
   salaryProjection: {
     current: number;
     potential: number;

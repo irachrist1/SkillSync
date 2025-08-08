@@ -1,6 +1,6 @@
 // localStorage utilities for SkillSync AI user data persistence
 
-import { UserProfile, AIAnalysis, LearningRecommendation } from '@/types';
+import { UserProfile, AIAnalysis } from '@/types';
 
 const STORAGE_KEYS = {
   USER_PROFILE: 'skillsync_user_profile',
