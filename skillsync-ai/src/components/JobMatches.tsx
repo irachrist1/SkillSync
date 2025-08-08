@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { MapPin, Calendar, Briefcase, ExternalLink, Target } from 'lucide-react';
+import { MapPin, Calendar, Briefcase, ExternalLink, Target, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -80,14 +80,19 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
     : 0;
 
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-8', className)}>
       {/* Header */}
-      <div>
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+      <div className="text-center">
+        <div className="flex justify-center mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center">
+            <Briefcase className="w-6 h-6 text-white" />
+          </div>
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-3">
           Job Opportunities for You
         </h2>
-        <p className="text-gray-600 max-w-2xl">
-          {jobsWithScores.length} opportunities found in Rwanda's job market, ranked by match.
+        <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          {jobsWithScores.length} opportunities found in Rwanda's job market, ranked by your skill match.
         </p>
       </div>
 
@@ -98,66 +103,87 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
           const missingSkills = getMissingSkills(job);
 
           return (
-            <Card key={job.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
+            <Card key={job.id} className="group hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-l-4 border-l-blue-500 bg-gradient-to-r from-white to-gray-50">
+              <CardHeader className="pb-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <CardTitle className="text-xl">{job.title}</CardTitle>
-                      <Badge className={getIndustryColor(job.industry)}>
-                        {job.industry}
-                      </Badge>
-                      {job.isRemote && (
-                        <Badge variant="outline">Remote Available</Badge>
-                      )}
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Briefcase className="w-6 h-6 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                          {job.title}
+                        </CardTitle>
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <Badge className={cn("text-xs font-semibold", getIndustryColor(job.industry))}>
+                            {job.industry}
+                          </Badge>
+                          {job.isRemote && (
+                            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                              🌐 Remote Available
+                            </Badge>
+                          )}
+                          <Badge 
+                            className={cn("text-xs font-semibold",
+                              matchInfo.category === 'excellent' ? 'bg-green-100 text-green-700 border-green-300' : 
+                              matchInfo.category === 'good' ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                              matchInfo.category === 'fair' ? 'bg-yellow-100 text-yellow-700 border-yellow-300' : 
+                              'bg-red-100 text-red-700 border-red-300'
+                            )}
+                          >
+                            <Target className="w-3 h-3 mr-1" />
+                            {Math.round(job.matchScore * 100)}% Match
+                          </Badge>
+                        </div>
+                      </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                      <div className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+                      <div className="flex items-center gap-1.5">
                         <Briefcase className="w-4 h-4" />
-                        {job.company || '—'}
+                        <span className="font-medium">{job.company || '—'}</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <MapPin className="w-4 h-4" />
-                        {job.location}
+                        <span>{job.location}</span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1.5">
                         <Calendar className="w-4 h-4" />
-                        {formatTimeAgo(job.postedDate)}
+                        <span>{formatTimeAgo(job.postedDate)}</span>
                       </div>
                     </div>
 
-                    <CardDescription className="line-clamp-2">
+                    <CardDescription className="text-gray-600 leading-relaxed">
                       {job.description}
                     </CardDescription>
                   </div>
 
-                  <div className="text-right ml-4">
-                    <div className="text-lg font-bold text-gray-900 mb-1">
-                      {formatSalary(job.salaryRange.min)} - {formatSalary(job.salaryRange.max)}
+                  <div className="text-right ml-6 flex-shrink-0">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+                      <div className="text-xl font-bold text-green-700 mb-1">
+                        {formatSalary(job.salaryRange.min)} - {formatSalary(job.salaryRange.max)}
+                      </div>
+                      <div className="text-xs text-green-600 mb-2">
+                        {getJobTypeIcon(job.jobType)} {job.jobType} • {job.experienceLevel}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        per month
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500 mb-2">
-                      {getJobTypeIcon(job.jobType)} {job.jobType} • {job.experienceLevel}
-                    </div>
-                    <Badge 
-                      variant={matchInfo.category === 'excellent' ? 'success' : 
-                              matchInfo.category === 'good' ? 'info' :
-                              matchInfo.category === 'fair' ? 'warning' : 'destructive'}
-                      className="text-xs"
-                    >
-                      <Target className="w-3 h-3 mr-1" />
-                      {Math.round(job.matchScore * 100)}% Match
-                    </Badge>
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
                   {/* Required Skills */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Required Skills</h4>
-                    <div className="flex flex-wrap gap-1">
+                  <div className="bg-white/70 rounded-xl p-4 border border-gray-100">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      Required Skills
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
                       {job.requiredSkills.map((skill) => {
                         const hasSkill = userSkills.some(s => 
                           s.name.toLowerCase().includes(skill.toLowerCase()) || 
@@ -166,8 +192,12 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
                         return (
                           <Badge 
                             key={skill}
-                            variant={hasSkill ? "success" : "outline"}
-                            className="text-xs"
+                            className={cn(
+                              "text-xs font-medium transition-all duration-200",
+                              hasSkill 
+                                ? "bg-green-100 text-green-700 border-green-300 hover:bg-green-200" 
+                                : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                            )}
                           >
                             {skill}
                             {hasSkill && " ✓"}
@@ -179,9 +209,12 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
 
                   {/* Preferred Skills */}
                   {job.preferredSkills && job.preferredSkills.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Preferred Skills</h4>
-                      <div className="flex flex-wrap gap-1">
+                    <div className="bg-white/70 rounded-xl p-4 border border-gray-100">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        Preferred Skills
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
                         {job.preferredSkills.map((skill) => {
                           const hasSkill = userSkills.some(s => 
                             s.name.toLowerCase().includes(skill.toLowerCase()) || 
@@ -190,8 +223,12 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
                           return (
                             <Badge 
                               key={skill}
-                              variant={hasSkill ? "info" : "outline"}
-                              className="text-xs"
+                              className={cn(
+                                "text-xs font-medium transition-all duration-200",
+                                hasSkill 
+                                  ? "bg-blue-100 text-blue-700 border-blue-300 hover:bg-blue-200" 
+                                  : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
+                              )}
                             >
                               {skill}
                               {hasSkill && " ✓"}
@@ -204,37 +241,56 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
                 </div>
 
                 {/* Match Analysis */}
-                <div className={cn("p-3 rounded-lg mb-4", 
-                  matchInfo.category === 'excellent' ? 'bg-green-50 border border-green-200' :
-                  matchInfo.category === 'good' ? 'bg-blue-50 border border-blue-200' :
-                  matchInfo.category === 'fair' ? 'bg-yellow-50 border border-yellow-200' :
-                  'bg-red-50 border border-red-200'
+                <div className={cn("p-4 rounded-xl mb-6 border-l-4", 
+                  matchInfo.category === 'excellent' ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 border-l-green-500' :
+                  matchInfo.category === 'good' ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200 border-l-blue-500' :
+                  matchInfo.category === 'fair' ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200 border-l-yellow-500' :
+                  'bg-gradient-to-r from-red-50 to-pink-50 border-red-200 border-l-red-500'
                 )}>
-                  <div className={cn("text-sm font-medium mb-1", matchInfo.color)}>
+                  <div className={cn("text-sm font-semibold mb-2 flex items-center gap-2", matchInfo.color)}>
+                    <div className={cn("w-2 h-2 rounded-full",
+                      matchInfo.category === 'excellent' ? 'bg-green-500' :
+                      matchInfo.category === 'good' ? 'bg-blue-500' :
+                      matchInfo.category === 'fair' ? 'bg-yellow-500' : 'bg-red-500'
+                    )}></div>
                     {matchInfo.description}
                   </div>
                   
                   {missingSkills.length > 0 && (
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-gray-600 mb-2">
                       <span className="font-medium">Missing skills:</span> {missingSkills.join(', ')}
                     </div>
                   )}
                   
                   {matchInfo.category === 'excellent' && (
-                    <div className="text-xs text-green-700 mt-1">
-                      🎉 You're ready to apply! Your skills align perfectly with this role.
+                    <div className="text-sm text-green-700 font-medium bg-white/50 rounded-lg p-2 mt-2">
+                      🎉 Perfect match! Your skills align excellently with this role.
+                    </div>
+                  )}
+                  
+                  {matchInfo.category === 'good' && (
+                    <div className="text-sm text-blue-700 font-medium bg-white/50 rounded-lg p-2 mt-2">
+                      💪 Strong candidate! You meet most requirements for this role.
                     </div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
-                  <Button size="sm" className="flex-1" onClick={() => setSelectedJob(job)}>
+                <div className="flex gap-3">
+                  <Button 
+                    size="sm" 
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 hover:scale-105" 
+                    onClick={() => setSelectedJob(job)}
+                  >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View Details
                   </Button>
                   {missingSkills.length > 0 && (
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="border-2 border-orange-200 text-orange-700 hover:bg-orange-50 hover:border-orange-300 transition-all duration-200 hover:scale-105"
+                    >
                       Learn Missing Skills
                     </Button>
                   )}
@@ -246,30 +302,46 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
       </div>
 
       {/* Summary */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
+      <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-200/50 shadow-lg">
+        <CardContent className="pt-8 pb-6">
+          <div className="text-center mb-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Your Job Market Summary</h3>
+            <p className="text-gray-600">Based on your current skills in Rwanda's job market</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-green-600 mb-1">
                 {jobsWithScores.filter(j => j.matchScore >= 0.8).length}
               </div>
-              <div className="text-sm text-blue-700">Excellent Matches</div>
+              <div className="text-sm text-green-700 font-medium">Excellent Matches</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">{formatSalary(averageSalaryNumber)}</div>
-              <div className="text-sm text-green-700">Avg Salary</div>
+            <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-blue-600 mb-1">{formatSalary(averageSalaryNumber)}</div>
+              <div className="text-sm text-blue-700 font-medium">Avg Salary</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">
+            <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <MapPin className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-purple-600 mb-1">
                 {jobsWithScores.filter(j => j.isRemote).length}
               </div>
-              <div className="text-sm text-purple-700">Remote Jobs</div>
+              <div className="text-sm text-purple-700 font-medium">Remote Jobs</div>
             </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">
+            <div className="text-center bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Briefcase className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-2xl font-bold text-orange-600 mb-1">
                 {new Set(jobsWithScores.map(j => j.industry)).size}
               </div>
-              <div className="text-sm text-orange-700">Industries</div>
+              <div className="text-sm text-orange-700 font-medium">Industries</div>
             </div>
           </div>
         </CardContent>

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Brain, Target, TrendingUp, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LoadingState } from '@/components/LoadingSpinner';
+import { LoadingState, AIProcessingLoading } from '@/components/LoadingSpinner';
 import { SkillsSelector } from '@/components/SkillsSelector';
 import { JobMatches } from '@/components/JobMatches';
 import { LearningPath } from '@/components/LearningPath';
@@ -391,7 +391,7 @@ export default function HomePage() {
         )}
 
         {isAnalyzing && (
-          <LoadingState message="Analyzing your skills against Rwanda's job market..." />
+          <AIProcessingLoading type="analysis" />
         )}
       </div>
     );

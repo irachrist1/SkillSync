@@ -99,38 +99,52 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
   return (
     <div className={cn('space-y-6', className)}>
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <div className="text-center mb-8">
+        <div className="flex justify-center mb-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center">
+            <Plus className="w-6 h-6 text-white" />
+          </div>
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900 mb-3">
           Select Your Skills
         </h2>
-        <p className="text-gray-600">
-          Choose skills you already have. We'll analyze Rwanda job opportunities for you.
+        <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          Choose skills you already have. We'll analyze Rwanda job opportunities and show you exactly what you can achieve.
         </p>
       </div>
 
       {/* Selected Skills */}
       {selectedSkills.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Your Skills ({selectedSkills.length})</CardTitle>
+        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                Your Skills ({selectedSkills.length})
+              </CardTitle>
+              <div className="text-sm text-blue-600 font-medium">
+                Ready for analysis
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-3">
               {selectedSkills.map((skill) => (
-                <Badge 
+                <div
                   key={skill.id}
-                  variant="secondary"
-                  className="flex items-center gap-2 py-2 px-3"
+                  className="group flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-white/50 rounded-xl py-2 px-4 shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105"
                 >
-                  <span>{skill.name}</span>
-                  <span className="text-xs opacity-70">({skill.level})</span>
+                  <span className="font-medium text-gray-900">{skill.name}</span>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                    {skill.level}
+                  </span>
                   <button
                     onClick={() => removeSkill(skill.id)}
-                    className="hover:bg-red-100 rounded-full p-0.5"
+                    className="ml-1 hover:bg-red-100 rounded-full p-1 transition-colors opacity-60 group-hover:opacity-100"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3 h-3 text-red-600" />
                   </button>
-                </Badge>
+                </div>
               ))}
             </div>
           </CardContent>
@@ -139,11 +153,12 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
 
       {/* Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex gap-2 overflow-x-auto">
+        <div className="flex gap-2 overflow-x-auto pb-2">
           <Button
             variant={selectedCategory === 'all' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setSelectedCategory('all')}
+            className="rounded-full transition-all duration-200 hover:scale-105"
           >
             All Skills
           </Button>
@@ -153,7 +168,7 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
               variant={selectedCategory === category.id ? 'default' : 'outline'}
               size="sm"
               onClick={() => setSelectedCategory(category.id)}
-              className="whitespace-nowrap"
+              className="whitespace-nowrap rounded-full transition-all duration-200 hover:scale-105"
             >
               {category.name}
             </Button>
@@ -170,19 +185,24 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
           if (availableSkills.length === 0 && searchTerm) return null;
 
           return (
-            <Card key={category.id} className="relative">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-lg">{category.name}</CardTitle>
-                    <CardDescription>{category.description}</CardDescription>
+            <Card key={category.id} className="relative hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl text-gray-900 mb-2 flex items-center gap-2">
+                      <span className="text-2xl">{demand.symbol}</span>
+                      {category.name}
+                    </CardTitle>
+                    <CardDescription className="text-base text-gray-600">
+                      {category.description}
+                    </CardDescription>
                   </div>
-                  <div className="text-right">
-                    <div className={cn("text-sm font-medium", demand.color)}>
-                      {demand.symbol} {demand.text}
+                  <div className="text-right ml-4">
+                    <div className={cn("text-sm font-semibold px-3 py-1 rounded-full", demand.color === 'text-green-600' ? 'bg-green-100 text-green-700' : demand.color === 'text-blue-600' ? 'bg-blue-100 text-blue-700' : demand.color === 'text-yellow-600' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700')}>
+                      {demand.text}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Avg salary impact: {(category.avgSalaryImpact / 1000).toFixed(0)}k RWF
+                    <div className="text-sm text-gray-600 mt-2 font-medium">
+                      +{(category.avgSalaryImpact / 1000).toFixed(0)}k RWF avg impact
                     </div>
                   </div>
                 </div>
@@ -190,25 +210,30 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
               
               <CardContent>
                 {availableSkills.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {availableSkills.map((skillName) => (
                       <button
                         key={skillName}
                         onClick={() => addSkill(skillName)}
-                        className="inline-flex items-center gap-1 px-3 py-2 text-sm bg-gray-100 hover:bg-blue-100 rounded-md transition-colors"
+                        className="group inline-flex items-center gap-2 px-4 py-2.5 text-sm bg-gradient-to-r from-gray-50 to-gray-100 hover:from-blue-50 hover:to-indigo-50 border border-gray-200 hover:border-blue-300 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-sm"
                       >
-                        <Plus className="w-3 h-3" />
-                        {skillName}
+                        <Plus className="w-4 h-4 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                        <span className="font-medium text-gray-700 group-hover:text-gray-900">
+                          {skillName}
+                        </span>
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">
-                    {searchTerm 
-                      ? `No skills found matching "${searchTerm}" in this category`
-                      : 'All skills in this category have been selected'
-                    }
-                  </p>
+                  <div className="text-center py-8">
+                    <div className="text-gray-400 text-4xl mb-2">✨</div>
+                    <p className="text-gray-500 text-sm">
+                      {searchTerm 
+                        ? `No skills found matching "${searchTerm}" in this category`
+                        : 'All skills in this category have been selected'
+                      }
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -218,40 +243,48 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
 
       {/* Skill Level Modal */}
       {showLevelSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>Select Your Level</CardTitle>
-              <CardDescription>
-                How would you rate your skill level in <strong>{showLevelSelector}</strong>?
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <Card className="w-full max-w-md mx-auto scale-100 animate-in zoom-in-95 duration-200 shadow-2xl border-2 border-white/20">
+            <CardHeader className="text-center pb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Plus className="w-8 h-8 text-white" />
+              </div>
+              <CardTitle className="text-2xl">Select Your Level</CardTitle>
+              <CardDescription className="text-base">
+                How would you rate your skill level in <strong className="text-blue-600">{showLevelSelector}</strong>?
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 pb-6">
               {[
-                { level: 'beginner' as const, desc: 'Just starting out, basic knowledge' },
-                { level: 'intermediate' as const, desc: 'Some experience, can work independently' },
-                { level: 'advanced' as const, desc: 'Strong skills, can mentor others' },
-                { level: 'expert' as const, desc: 'Deep expertise, recognized authority' }
-              ].map(({ level, desc }) => (
-                <Button
+                { level: 'beginner' as const, desc: 'Just starting out, basic knowledge', color: 'from-green-50 to-emerald-50 border-green-200 hover:border-green-300' },
+                { level: 'intermediate' as const, desc: 'Some experience, can work independently', color: 'from-blue-50 to-cyan-50 border-blue-200 hover:border-blue-300' },
+                { level: 'advanced' as const, desc: 'Strong skills, can mentor others', color: 'from-purple-50 to-violet-50 border-purple-200 hover:border-purple-300' },
+                { level: 'expert' as const, desc: 'Deep expertise, recognized authority', color: 'from-orange-50 to-red-50 border-orange-200 hover:border-orange-300' }
+              ].map(({ level, desc, color }) => (
+                <button
                   key={level}
-                  variant="outline"
-                  className="w-full justify-start text-left h-auto p-4"
+                  className={`w-full p-4 text-left rounded-xl border-2 bg-gradient-to-r ${color} transition-all duration-200 hover:scale-105 hover:shadow-md group`}
                   onClick={() => confirmSkill(showLevelSelector, level)}
                 >
                   <div>
-                    <div className="font-medium capitalize">{level}</div>
-                    <div className="text-sm text-gray-500">{desc}</div>
+                    <div className="font-semibold capitalize text-gray-900 text-lg mb-1 group-hover:text-gray-800">
+                      {level}
+                    </div>
+                    <div className="text-sm text-gray-600 group-hover:text-gray-700">
+                      {desc}
+                    </div>
                   </div>
-                </Button>
+                </button>
               ))}
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() => setShowLevelSelector(null)}
-              >
-                Cancel
-              </Button>
+              <div className="pt-4 border-t border-gray-200">
+                <Button
+                  variant="ghost"
+                  className="w-full hover:bg-gray-100 transition-colors"
+                  onClick={() => setShowLevelSelector(null)}
+                >
+                  Cancel
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
