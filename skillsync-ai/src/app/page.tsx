@@ -128,7 +128,17 @@ export default function HomePage() {
 
     try {
       // Call service layer (backend or stubs)
-      const skillsList = userSkills.map(s => s.name.toLowerCase());
+      // Map frontend skills to backend skill names
+      const mapSkillToBackend = (frontendSkill: string): string[] => {
+        const skill = frontendSkill.toLowerCase();
+        if (skill === 'html/css') return ['html', 'css'];
+        if (skill === 'power bi') return ['powerbi'];
+        if (skill === 'social media marketing') return ['social media marketing'];
+        if (skill === 'google analytics') return ['google analytics'];
+        return [skill];
+      };
+      
+      const skillsList = userSkills.flatMap(s => mapSkillToBackend(s.name));
       Services.resetFallbackFlag();
       const matchedJobsData = await Services.matchJobs(skillsList);
 
