@@ -9,11 +9,13 @@ import { SkillsSelector } from '@/components/SkillsSelector';
 import { JobMatches } from '@/components/JobMatches';
 import { LearningPath } from '@/components/LearningPath';
 import { NextLevelJobs } from '@/components/NextLevelJobs';
+import { GuidedDemo } from '@/components/GuidedDemo';
 import { UserSkill, UserProfile, AIAnalysis, JobOpportunity } from '@/types';
 import { LocalStorageManager } from '@/lib/localStorage';
+import { Services } from '@/lib/services';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7800';
+// API_URL retained for backward compatibility; service layer controls traffic now
 
 export default function HomePage() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function HomePage() {
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDemo, setShowDemo] = useState(false);
 
   // Load initial step from query/local storage on mount
   useEffect(() => {
@@ -56,6 +59,19 @@ export default function HomePage() {
     // Keep history clean
     router.replace(url.pathname + url.search);
   }, [currentStep, router]);
+
+  // UX polish: focus search on Skills, scroll to top on Analysis
+  useEffect(() => {
+    if (currentStep === 'skills') {
+      setTimeout(() => {
+        const el = document.getElementById('skill-search-input') as HTMLInputElement | null;
+        el?.focus();
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 0);
+    } else if (currentStep === 'analysis') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentStep]);
 
   const handleGetStarted = () => {
     setCurrentStep('skills');
@@ -107,15 +123,10 @@ export default function HomePage() {
     setError(null);
 
     try {
-      // Call backend API to match jobs
-      const matchJobsResponse = await fetch(`${API_URL}/skillsync/match-jobs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()) }),
-      });
-      const matchedJobsData = await matchJobsResponse.json();
+      // Call service layer (backend or stubs)
+      const skillsList = userSkills.map(s => s.name.toLowerCase());
+      Services.resetFallbackFlag();
+      const matchedJobsData = await Services.matchJobs(skillsList);
 
       // Normalize backend jobs (snake_case → camelCase, fill required fields)
       const normalizeJobs = (backendJobs: any[]): JobOpportunity[] => {
@@ -137,45 +148,18 @@ export default function HomePage() {
       };
       const normalizedJobs = normalizeJobs(matchedJobsData.qualified_jobs);
 
-      // Call backend API for opportunity gap analysis
-      const gapAnalysisResponse = await fetch(`${API_URL}/skillsync/opportunity-gap-analysis`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()) }),
-      });
-      const gapAnalysisData = await gapAnalysisResponse.json();
+      const gapAnalysisData = await Services.gapAnalysis(skillsList);
 
-      // Call backend API for salary impact calculator
-      const salaryImpactResponse = await fetch(`${API_URL}/skillsync/salary-impact-calculator`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()), new_skill: gapAnalysisData.analysis.recommendations[0]?.skill || '' }),
-      });
-      const salaryImpactData = await salaryImpactResponse.json();
+      const salaryImpactData = await Services.salaryImpact(
+        skillsList,
+        gapAnalysisData.analysis.recommendations[0]?.skill || ''
+      );
 
-      // Call backend API for curriculum generation
-      const curriculumResponse = await fetch(`${API_URL}/skillsync/generate-curriculum`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ skills_to_learn: gapAnalysisData.analysis.recommendations.map((r: any) => r.skill) }),
-      });
-      const curriculumData = await curriculumResponse.json();
+      const curriculumData = await Services.generateCurriculum(
+        gapAnalysisData.analysis.recommendations.map((r: any) => r.skill)
+      );
 
-      // Call backend API for market insights
-      const marketInsightsResponse = await fetch(`${API_URL}/skillsync/market-insights`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()) }),
-      });
-      const marketInsightsData = await marketInsightsResponse.json();
+      const marketInsightsData = await Services.marketInsights(skillsList);
 
       // Calculate current salary from normalized jobs
       const currentSalary = normalizedJobs.reduce((max: number, job: any) => Math.max(max, job.salaryRange?.max ?? 0), 0);
@@ -204,6 +188,9 @@ export default function HomePage() {
       };
 
       setAiAnalysis(newAIAnalysis);
+      if (Services.wasFallbackUsed()) {
+        setError('Low‑data mode: showing cached/local results due to network issues.');
+      }
       LocalStorageManager.saveAIAnalysis(newAIAnalysis);
       setCurrentStep('analysis');
     } catch (err) {
@@ -256,6 +243,14 @@ export default function HomePage() {
             >
               See Demo
             </Button>
+            <Button 
+              variant="ghost" 
+              size="lg"
+              className="text-lg px-8 py-4"
+              onClick={() => setShowDemo(true)}
+            >
+              Guided Demo (90s)
+            </Button>
           </div>
         </div>
 
@@ -299,7 +294,7 @@ export default function HomePage() {
         </div>
 
         {/* Market Insights Preview */}
-        <Card className="bg-blue-50 border-blue-200">
+          <Card className="bg-blue-50 border-blue-200">
           <CardHeader>
             <CardTitle className="text-blue-800">🇷🇼 Rwanda Digital Job Market</CardTitle>
           </CardHeader>
@@ -323,9 +318,13 @@ export default function HomePage() {
                   <li>• Remote work: +200% since 2020</li>
                 </ul>
               </div>
+                <div className="md:col-span-2 text-xs text-blue-900/80 mt-2">
+                  Sources: kLab Rwanda, SOLVIT Africa, public job postings. Data is indicative for demo.
+                </div>
             </div>
           </CardContent>
         </Card>
+        {showDemo && <GuidedDemo onClose={() => setShowDemo(false)} />}
       </div>
     );
   }
@@ -432,6 +431,33 @@ export default function HomePage() {
                   <strong>Potential increase:</strong> {' '}
                   {((aiAnalysis.recommendations.salaryProjection.potential - aiAnalysis.recommendations.salaryProjection.current) / 1000).toFixed(0)}k RWF/month
                   ({Math.round(((aiAnalysis.recommendations.salaryProjection.potential / aiAnalysis.recommendations.salaryProjection.current) - 1) * 100)}% boost)
+                </div>
+                {/* M2: Impact summary */}
+                <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                  <div>
+                    <div className="text-xl font-semibold text-blue-700">
+                      {aiAnalysis.recommendations.currentOpportunities.filter(j => j.matchScore && j.matchScore >= 0.8).length}
+                    </div>
+                    <div className="text-xs text-gray-600">Excellent Matches</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-semibold text-emerald-700">
+                      {(aiAnalysis.recommendations.salaryProjection.potential - aiAnalysis.recommendations.salaryProjection.current).toLocaleString()} RWF
+                    </div>
+                    <div className="text-xs text-gray-600">Salary Delta</div>
+                  </div>
+                  <div>
+                    <div className={`text-xl font-semibold ${aiAnalysis.recommendations.salaryProjection.potential - aiAnalysis.recommendations.salaryProjection.current > 200000 ? 'text-green-700' : 'text-amber-700'}`}>
+                      {aiAnalysis.recommendations.salaryProjection.potential - aiAnalysis.recommendations.salaryProjection.current > 200000 ? 'High' : 'Moderate'}
+                    </div>
+                    <div className="text-xs text-gray-600">ROI Meter</div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-semibold text-purple-700">
+                      {aiAnalysis.recommendations.skillGaps.length}
+                    </div>
+                    <div className="text-xs text-gray-600">Skills to Learn</div>
+                  </div>
                 </div>
               </div>
             </CardContent>

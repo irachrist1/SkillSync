@@ -118,10 +118,10 @@ export default function RootLayout({
                 
                 <div className="border-t pt-8 mt-8 text-center text-sm text-gray-500">
                   <p>
-                    &copy; 2024 SkillSync AI. Built for Rwanda's digital future.
+                    &copy; 2025 SkillSync AI. Built for Rwanda's digital future.
                   </p>
                   <p className="mt-2">
-                    Powered by Google Gemini AI • Data from Rwanda Job Market Analysis
+                    Powered by Google Gemini AI • Data from Rwanda Job Market Analysis 
                   </p>
                 </div>
               </div>

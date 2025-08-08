@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,7 @@ interface SkillsSelectorProps {
 type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
 export function SkillsSelector({ selectedSkills, onSkillsChange, className }: SkillsSelectorProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const searchTerm = '';
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showLevelSelector, setShowLevelSelector] = useState<string | null>(null);
 
@@ -137,17 +137,8 @@ export function SkillsSelector({ selectedSkills, onSkillsChange, className }: Sk
         </Card>
       )}
 
-      {/* Search and Filter */}
+      {/* Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder="Search for skills (e.g., React, Python, Marketing)..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
         <div className="flex gap-2 overflow-x-auto">
           <Button
             variant={selectedCategory === 'all' ? 'default' : 'outline'}

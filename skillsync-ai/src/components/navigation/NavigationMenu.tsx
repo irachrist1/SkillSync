@@ -29,13 +29,6 @@ export function NavigationMenu() {
           </Link>
         );
       })}
-      <Link
-        href={{ pathname: '/', query: { step: 'skills' } }}
-        className="ml-2 px-3 py-2 rounded-md text-sm border hover:bg-gray-100"
-        aria-label="Open Skill Picker"
-      >
-        Skill Picker
-      </Link>
     </nav>
   );
 }
