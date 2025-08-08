@@ -100,7 +100,9 @@ export function formatDuration(duration: string): string {
   return duration;
 }
 
-export function formatTimeAgo(date: Date): string {
+export function formatTimeAgo(dateInput: Date | string | number): string {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+  if (isNaN(date.getTime())) return 'Recently';
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));

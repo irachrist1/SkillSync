@@ -9,12 +9,15 @@ import { SkillsSelector } from '@/components/SkillsSelector';
 import { JobMatches } from '@/components/JobMatches';
 import { LearningPath } from '@/components/LearningPath';
 import { NextLevelJobs } from '@/components/NextLevelJobs';
-import { UserSkill, UserProfile, AIAnalysis } from '@/types';
+import { UserSkill, UserProfile, AIAnalysis, JobOpportunity } from '@/types';
 import { LocalStorageManager } from '@/lib/localStorage';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7800';
 
 export default function HomePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState<'welcome' | 'skills' | 'analysis'>('welcome');
   const [userSkills, setUserSkills] = useState<UserSkill[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -22,11 +25,16 @@ export default function HomePage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Load saved data on component mount
+  // Load initial step from query/local storage on mount
   useEffect(() => {
+    const stepFromQuery = searchParams.get('step');
     const savedProfile = LocalStorageManager.getUserProfile();
     const savedAnalysis = LocalStorageManager.getAIAnalysis();
     
+    if (stepFromQuery === 'welcome' || stepFromQuery === 'skills' || stepFromQuery === 'analysis') {
+      setCurrentStep(stepFromQuery);
+    }
+
     if (savedProfile) {
       setUserProfile(savedProfile);
       setUserSkills(savedProfile.skills);
@@ -34,15 +42,42 @@ export default function HomePage() {
       // Skip to analysis if we have recent data
       if (savedAnalysis && !LocalStorageManager.isDataStale(savedAnalysis.lastAnalyzed, 24)) {
         setAiAnalysis(savedAnalysis);
-        setCurrentStep('analysis');
+        if (!stepFromQuery) setCurrentStep('analysis');
       } else if (savedProfile.skills.length > 0) {
-        setCurrentStep('skills');
+        if (!stepFromQuery) setCurrentStep('skills');
       }
     }
-  }, []);
+  }, [searchParams]);
+
+  // Sync step to URL query
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('step', currentStep);
+    // Keep history clean
+    router.replace(url.pathname + url.search);
+  }, [currentStep, router]);
 
   const handleGetStarted = () => {
     setCurrentStep('skills');
+  };
+
+  const handleSeeDemo = () => {
+    // Preload a realistic demo skill set and auto-run analysis
+    const demoSkills: UserSkill[] = [
+      { id: `demo-html`, name: 'HTML', category: 'technical', level: 'intermediate' },
+      { id: `demo-css`, name: 'CSS', category: 'technical', level: 'intermediate' },
+      { id: `demo-js`, name: 'JavaScript', category: 'technical', level: 'intermediate' },
+      { id: `demo-react`, name: 'React', category: 'technical', level: 'beginner' },
+      { id: `demo-git`, name: 'Git', category: 'technical', level: 'beginner' },
+    ];
+
+    handleSkillsChange(demoSkills);
+    setCurrentStep('skills');
+
+    // Ensure state is applied before running analysis
+    setTimeout(() => {
+      void handleAnalyzeSkills();
+    }, 0);
   };
 
   const handleSkillsChange = (skills: UserSkill[]) => {
@@ -81,6 +116,26 @@ export default function HomePage() {
         body: JSON.stringify({ skills: userSkills.map(s => s.name.toLowerCase()) }),
       });
       const matchedJobsData = await matchJobsResponse.json();
+
+      // Normalize backend jobs (snake_case → camelCase, fill required fields)
+      const normalizeJobs = (backendJobs: any[]): JobOpportunity[] => {
+        return (backendJobs || []).map((j: any, index: number) => ({
+          id: String(j.id ?? index),
+          title: j.title ?? 'Job Opportunity',
+          company: j.company ?? '—',
+          location: j.location ?? 'Kigali, Rwanda',
+          industry: j.industry ?? 'Technology',
+          salaryRange: j.salaryRange ?? { min: 0, max: 0, currency: 'RWF' },
+          requiredSkills: j.requiredSkills ?? j.required_skills ?? [],
+          preferredSkills: j.preferredSkills ?? j.preferred_skills ?? [],
+          experienceLevel: j.experienceLevel ?? 'entry',
+          description: j.description ?? '',
+          jobType: j.jobType ?? 'full-time',
+          isRemote: Boolean(j.isRemote ?? false),
+          postedDate: j.postedDate ? new Date(j.postedDate) : new Date(),
+        }));
+      };
+      const normalizedJobs = normalizeJobs(matchedJobsData.qualified_jobs);
 
       // Call backend API for opportunity gap analysis
       const gapAnalysisResponse = await fetch(`${API_URL}/skillsync/opportunity-gap-analysis`, {
@@ -122,25 +177,29 @@ export default function HomePage() {
       });
       const marketInsightsData = await marketInsightsResponse.json();
 
-      // Calculate current salary
-      const currentSalary = matchedJobsData.qualified_jobs.reduce((max: number, job: any) => Math.max(max, job.salaryRange.max), 0);
+      // Calculate current salary from normalized jobs
+      const currentSalary = normalizedJobs.reduce((max: number, job: any) => Math.max(max, job.salaryRange?.max ?? 0), 0);
 
       // Construct AIAnalysis object from API responses
       const newAIAnalysis: AIAnalysis = {
         userProfile: userProfile,
-        currentOpportunities: matchedJobsData.qualified_jobs || [],
+        currentOpportunities: normalizedJobs,
         recommendations: {
-          currentOpportunities: matchedJobsData.qualified_jobs || [],
+          currentOpportunities: normalizedJobs,
           skillGaps: gapAnalysisData.analysis.recommendations || [],
           nextLevelOpportunities: [],
-          learningPath: curriculumData.curriculum.learning_path || [],
+          learningPath: (curriculumData?.curriculum?.learning_path) || [],
           salaryProjection: {
             current: currentSalary,
             potential: currentSalary + salaryImpactData.potential_salary_increase_rwf,
             timeframe: '6 months'
           }
         },
-        marketInsights: marketInsightsData.insights.insights || [],
+        marketInsights: Array.isArray(marketInsightsData?.insights?.insights)
+          ? marketInsightsData.insights.insights
+          : Array.isArray(marketInsightsData?.insights)
+            ? marketInsightsData.insights
+            : [],
         lastAnalyzed: new Date()
       };
 
@@ -193,6 +252,7 @@ export default function HomePage() {
               variant="outline" 
               size="lg"
               className="text-lg px-8 py-4"
+              onClick={handleSeeDemo}
             >
               See Demo
             </Button>
@@ -293,8 +353,9 @@ export default function HomePage() {
           </div>
           
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
-              <p className="text-red-800 text-sm">{error}</p>
+            <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-4 flex items-center justify-between">
+              <p className="text-red-800 text-sm mr-4">{error}</p>
+              <Button size="sm" variant="outline" onClick={handleAnalyzeSkills}>Retry</Button>
             </div>
           )}
         </div>

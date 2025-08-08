@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import Link from 'next/link';
+import { NavigationMenu } from '@/components/navigation/NavigationMenu';
+import { ProfileMenu } from '@/components/navigation/ProfileMenu';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -48,20 +51,24 @@ export default function RootLayout({
                 <div className="flex items-center justify-between h-16">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">SS</span>
-                      </div>
-                      <div>
-                        <h1 className="text-lg font-bold text-gray-900">SkillSync AI</h1>
-                        <p className="text-xs text-gray-600">Rwanda Skills-to-Jobs Matcher</p>
-                      </div>
+                      <Link href={{ pathname: '/', query: { step: 'welcome' } }} className="flex items-center space-x-2">
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold text-sm">SS</span>
+                        </div>
+                        <div>
+                          <span className="text-lg font-bold text-gray-900 leading-none">SkillSync AI</span>
+                          <p className="text-[11px] text-gray-600">Rwanda Skills-to-Jobs Matcher</p>
+                        </div>
+                      </Link>
                     </div>
+                    <NavigationMenu />
                   </div>
                   
                   <div className="flex items-center space-x-4">
                     <div className="hidden sm:flex text-sm text-gray-600">
                       🇷🇼 Rwanda Job Market
                     </div>
+                    <ProfileMenu />
                   </div>
                 </div>
               </div>

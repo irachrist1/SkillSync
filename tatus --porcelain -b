@@ -1,0 +1,32 @@
+[33mcommit 19a7e3d4613bf03ea4f49471f3e8d211446004b2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev-backend[m[33m, [m[1;31morigin/dev-backend[m[33m)[m
+Author: nindenkawe <amiritius@gmail.com>
+Date:   Fri Aug 8 03:56:48 2025 +0200
+
+    feat: Integrate core AI features and stabilize application
+    
+    - Displayed dynamic market insights and personalized learning paths.
+    - Showcased next-level job opportunities based on AI recommendations.
+    - Fixed numerous frontend build errors and backend JSON parsing.
+    - Resolved CORS issues for smooth service communication.
+    - Still debugging "Earning Potential" showing zero
+
+D	.env.local
+A	docker-compose.yml
+A	skillsync-ai/Dockerfile
+M	skillsync-ai/next.config.js
+M	skillsync-ai/src/app/page.tsx
+M	skillsync-ai/src/components/ErrorBoundary.tsx
+M	skillsync-ai/src/components/JobMatches.tsx
+A	skillsync-ai/src/components/LearningPath.tsx
+A	skillsync-ai/src/components/NextLevelJobs.tsx
+M	skillsync-ai/src/components/SkillsSelector.tsx
+D	skillsync-ai/src/lib/gemini.ts
+M	skillsync-ai/src/lib/localStorage.ts
+M	skillsync-ai/src/lib/utils.ts
+M	skillsync-ai/src/types/index.ts
+M	skillsync-ai/tsconfig.json
+M	skillsyncAPI/api_docs.md
+M	skillsyncAPI/app/api/endpoints.py
+M	skillsyncAPI/app/database.py
+M	skillsyncAPI/app/main.py
+D	skillsyncAPI/docker-compose.yml

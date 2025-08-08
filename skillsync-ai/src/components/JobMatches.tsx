@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { MapPin, Calendar, Briefcase, ExternalLink, Target } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,13 +16,17 @@ interface JobMatchesProps {
 }
 
 export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
-  // Calculate match scores and sort by relevance
-  const jobsWithScores = jobs
-    .map(job => ({
-      ...job,
-      matchScore: calculateJobMatchScore(userSkills, job)
-    }))
-    .sort((a, b) => b.matchScore - a.matchScore);
+  const [selectedJob, setSelectedJob] = useState<JobOpportunity | null>(null);
+
+  // Calculate match scores and sort by relevance (memoized)
+  const jobsWithScores = useMemo(() => {
+    return jobs
+      .map(job => ({
+        ...job,
+        matchScore: calculateJobMatchScore(userSkills, job)
+      }))
+      .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
+  }, [jobs, userSkills]);
 
   const getJobTypeIcon = (jobType: string) => {
     const icons = {
@@ -69,6 +73,12 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
     );
   }
 
+  // Helper for summary average salary
+  const excellentJobs = jobsWithScores.filter(j => (j.matchScore ?? 0) >= 0.8);
+  const averageSalaryNumber = excellentJobs.length > 0
+    ? excellentJobs.reduce((sum, job) => sum + ((job.salaryRange.min + job.salaryRange.max) / 2), 0) / excellentJobs.length
+    : 0;
+
   return (
     <div className={cn('space-y-6', className)}>
       {/* Header */}
@@ -105,7 +115,7 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
                     <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
                       <div className="flex items-center gap-1">
                         <Briefcase className="w-4 h-4" />
-                        {job.company}
+                        {job.company || '—'}
                       </div>
                       <div className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
@@ -219,7 +229,7 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button size="sm" className="flex-1">
+                  <Button size="sm" className="flex-1" onClick={() => setSelectedJob(job)}>
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View Details
                   </Button>
@@ -246,14 +256,7 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
               <div className="text-sm text-blue-700">Excellent Matches</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-green-600">
-                {formatSalary(
-                  jobsWithScores
-                    .filter(j => j.matchScore >= 0.8)
-                    .reduce((avg, job) => avg + (job.salaryRange.min + job.salaryRange.max) / 2, 0) / 
-                  Math.max(jobsWithScores.filter(j => j.matchScore >= 0.8).length, 1)
-                ).replace(/,/g, 'k').replace('RWF', '')}
-              </div>
+              <div className="text-2xl font-bold text-green-600">{formatSalary(averageSalaryNumber)}</div>
               <div className="text-sm text-green-700">Avg Salary</div>
             </div>
             <div>
@@ -271,6 +274,60 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Details Modal */}
+      {selectedJob && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl">
+            <CardHeader>
+              <CardTitle>{selectedJob.title}</CardTitle>
+              <CardDescription>
+                {selectedJob.company} • {selectedJob.location} • {selectedJob.jobType} • {selectedJob.experienceLevel}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-sm text-gray-700">
+                <div className="font-medium mb-1">Salary</div>
+                <div>
+                  {formatSalary(selectedJob.salaryRange.min)} – {formatSalary(selectedJob.salaryRange.max)}
+                </div>
+              </div>
+              {selectedJob.description && (
+                <div className="text-sm text-gray-700">
+                  <div className="font-medium mb-1">Description</div>
+                  <p className="whitespace-pre-wrap">{selectedJob.description}</p>
+                </div>
+              )}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm font-medium mb-1">Required Skills</div>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedJob.requiredSkills.map((s) => (
+                      <Badge key={s} variant="secondary" className="text-xs">{s}</Badge>
+                    ))}
+                  </div>
+                </div>
+                {selectedJob.preferredSkills && selectedJob.preferredSkills.length > 0 && (
+                  <div>
+                    <div className="text-sm font-medium mb-1">Preferred Skills</div>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedJob.preferredSkills.map((s) => (
+                        <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setSelectedJob(null)}>Close</Button>
+                {Boolean((selectedJob as any).url) && (
+                  <Button onClick={() => window.open((selectedJob as any).url, '_blank')}>Open Posting</Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
