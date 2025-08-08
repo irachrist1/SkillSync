@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { ProfileMenu } from '@/components/navigation/ProfileMenu';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { ChatLauncher } from '@/components/ChatLauncher';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -127,6 +128,7 @@ export default function RootLayout({
               </div>
             </footer>
           </div>
+          <ChatLauncher />
         </ErrorBoundary>
       </body>
     </html>

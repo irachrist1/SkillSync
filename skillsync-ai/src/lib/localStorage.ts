@@ -204,4 +204,26 @@ export class LocalStorageManager {
       return false;
     }
   }
+
+  // Courses storage (simple local DB)
+  static saveCourse(course: any): void {
+    try {
+      const raw = localStorage.getItem('skillsync_courses');
+      const list = raw ? JSON.parse(raw) : [];
+      const idx = list.findIndex((c: any) => c.id === course.id);
+      if (idx >= 0) list[idx] = course; else list.unshift(course);
+      localStorage.setItem('skillsync_courses', JSON.stringify(list));
+    } catch (e) { console.error('saveCourse error', e); }
+  }
+
+  static listCourses(): any[] {
+    try { return JSON.parse(localStorage.getItem('skillsync_courses') || '[]'); } catch { return []; }
+  }
+
+  static getCourse(id: string): any | null {
+    try {
+      const list = this.listCourses();
+      return list.find((c: any) => c.id === id) || null;
+    } catch { return null; }
+  }
 }

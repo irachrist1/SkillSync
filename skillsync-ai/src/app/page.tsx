@@ -481,6 +481,17 @@ export default function HomePage() {
                     const res = await Services.generateCourse(topSkill, 'beginner');
                     setGeneratedCourse(res.course || null);
                     setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
+                    try {
+                      const doc = {
+                        id: `course-${Date.now()}`,
+                        targetSkill: topSkill,
+                        level: 'beginner',
+                        course: res.course,
+                        createdAt: new Date().toISOString(),
+                      };
+                      LocalStorageManager.saveCourse(doc);
+                      // optional: route to courses page
+                    } catch {}
                   }}>Generate Full Course</Button>
                 </div>
               </div>
@@ -506,6 +517,9 @@ export default function HomePage() {
 
           <LearningPath learningPath={aiAnalysis.recommendations.learningPath} />
           {generatedCourse && <CourseOutline course={generatedCourse} />}
+          <div className="text-right">
+            <a href="/courses" className="text-blue-600 hover:underline text-sm">View all courses →</a>
+          </div>
 
           <NextLevelJobs 
             jobs={aiAnalysis.recommendations.nextLevelOpportunities}
