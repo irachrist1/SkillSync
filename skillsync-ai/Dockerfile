@@ -31,7 +31,7 @@ COPY --from=builder /app/package.json ./
 EXPOSE 3000
 
 # Set environment variable for API URL (will be overridden by docker-compose)
-ENV NEXT_PUBLIC_API_URL=http://localhost:7800
+ENV NEXT_PUBLIC_API_URL=https://effective-invention-xq9p955q6wwhpx9j-7800.app.github.dev
 
 # Start the Next.js application
 CMD ["npm", "start"]

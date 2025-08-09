@@ -1,12 +1,34 @@
 {
 	"info": {
 		"_postman_id": "a8f5b4a1-1b3a-4b1e-8b0a-9b8d7c6e3c2d",
-		"name": "SkillSync skillsync Tests (Port 7800)",
+		"name": "SkillSync API",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Match Jobs",
+			"name": "Full Analysis",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							    "pm.response.to.have.status(200);",
+								"});",
+							"const response = pm.response.json();",
+							"const requestBody = JSON.parse(pm.request.body.raw);",
+							"const analysisSummary = {",
+							    "userSkills: requestBody.skills,",
+							    "recommendedSkills: response.recommendations.skillGaps.map(skill => skill.skill),",
+							    "salaryProjection: response.recommendations.salaryProjection,",
+							    "nextLevelJobs: response.recommendations.nextLevelOpportunities.map(job => job.title).slice(0, 3)",
+							"};",
+							"pm.environment.set(\"chatContext\", JSON.stringify(analysisSummary));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -20,22 +42,50 @@
 					"raw": "{\n    \"skills\": [\"html\", \"css\", \"javascript\"]\n}"
 				},
 				"url": {
-					"raw": "http://localhost:7800/skillsync/match-jobs",
-					"protocol": "http",
+					"raw": "{{baseUrl}}/generate-full-analysis",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "7800",
 					"path": [
-						"skillsync",
-						"match-jobs"
+						"generate-full-analysis"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Opportunity Gap Analysis",
+			"name": "Coach Chat",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"const chatContext = pm.environment.get(\"chatContext\");",
+							"const requestBody = {",
+							    "question": "Based on my analysis, what is the single most important skill for me to learn next and why? Give me a concrete first step.",",
+							    "role": \"Career Coach\",",
+							    "analysis": {}
+};",
+							"if (chatContext) {",
+							"    requestBody.analysis = JSON.parse(chatContext);",
+							"}",
+							"pm.request.body.update(JSON.stringify(requestBody));"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							    "pm.response.to.have.status(200);",
+							    "});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [
@@ -46,25 +96,22 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"skills\": [\"html\", \"css\", \"javascript\"]\n}"
+					"raw": ""
 				},
 				"url": {
-					"raw": "http://localhost:7800/skillsync/opportunity-gap-analysis",
-					"protocol": "http",
+					"raw": "{{baseUrl}}/coach-chat",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "7800",
 					"path": [
-						"skillsync",
-						"opportunity-gap-analysis"
+						"coach-chat"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Salary Impact Calculator",
+			"name": "Generate Course",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -75,51 +122,46 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"skills\": [\"html\", \"css\", \"javascript\"],\n    \"new_skill\": \"react\"\n}"
+					"raw": "{\n    \"target_skill\": \"python\",\n    \"level\": \"beginner\"\n}"
 				},
 				"url": {
-					"raw": "http://localhost:7800/skillsync/salary-impact-calculator",
-					"protocol": "http",
+					"raw": "{{baseUrl}}/generate-course",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "7800",
 					"path": [
-						"skillsync",
-						"salary-impact-calculator"
+						"generate-course"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Generate Curriculum",
+			"name": "Health Check",
 			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"skills_to_learn\": [\"react\", \"git\"]\n}"
-				},
+				"method": "GET",
+				"header": [],
 				"url": {
-					"raw": "http://localhost:7800/skillsync/generate-curriculum",
-					"protocol": "http",
+					"raw": "{{baseUrl}}/health",
 					"host": [
-						"localhost"
+						"{{baseUrl}}"
 					],
-					"port": "7800",
 					"path": [
-						"skillsync",
-						"generate-curriculum"
+						"health"
 					]
 				}
 			},
 			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:7800"
+		},
+		{
+			"key": "chatContext",
+			"value": ""
 		}
 	]
 }

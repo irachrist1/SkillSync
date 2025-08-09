@@ -1,205 +1,283 @@
 import os
 import json
+import re
 import google.generativeai as genai
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
+from google.api_core.exceptions import ResourceExhausted
 from .. import database, schemas
+import asyncio
 
 load_dotenv()
 
 router = APIRouter()
 
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+# Configure the Gemini API key
+try:
+    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+except (TypeError, ValueError) as e:
+    raise RuntimeError("GOOGLE_API_KEY is not configured correctly.") from e
 
-@router.post("/match-jobs")
-def match_jobs(request: schemas.Skills):
-    """
-    Matches a user's skills to jobs in the database.
-    A user is considered qualified for a job if they have all the required skills.
-    """
-    qualified_jobs = []
-    for job in database.JOBS:
-        if set(job["required_skills"]).issubset(set(request.skills)):
-            qualified_jobs.append(job)
-    return {"qualified_jobs": qualified_jobs}
+def clean_and_parse_json(text: str) -> dict:
+    """Cleans the raw text from Gemini and parses it into a Python dictionary."""
+    cleaned_text = re.sub(r"```json\n?|```", "", text).strip()
+    try:
+        return json.loads(cleaned_text)
+    except json.JSONDecodeError as e:
+        print(f"JSONDecodeError: {e}\nOriginal text: {text}")
+        raise HTTPException(status_code=500, detail=f"Failed to parse AI response: {e}")
 
-@router.post("/opportunity-gap-analysis")
-def opportunity_gap_analysis(request: schemas.Skills):
-    """
-    Analyzes a user's skills and identifies the highest-impact skills to learn next.
-    """
-    # Find all jobs the user is NOT qualified for
-    unqualified_jobs = []
-    for job in database.JOBS:
-        if not set(job["required_skills"]).issubset(set(request.skills)):
-            unqualified_jobs.append(job)
+async def get_opportunity_gap_analysis(skills: list[str]) -> dict:
+    """Analyzes a user's skills and identifies the highest-impact skills to learn next."""
+    unqualified_jobs = [j for j in database.JOBS if not set(j["required_skills"]).issubset(set(skills))]
+    prompt = f'''**SYSTEM PROMPT**
 
-    # Create a prompt for the Gemini API
-    prompt = f"""You are a career intelligence analyst specializing in Rwanda's digital economy.
+You are a hyper-focused career intelligence analyst for Rwanda's digital economy, integrated into the SkillSync application. Your sole purpose is to help users bridge the skills gap and find better jobs in Rwanda.
 
-A user has the following skills: {request.skills}.
+**CONTEXT**
+- **User's Current Skills:** {skills}
+- **Relevant Unqualified Jobs (Data):** {unqualified_jobs}
+- **Your Goal:** Analyze the user's skill gap based *only* on the provided data and recommend the top 1-2 skills that will unlock the most significant job opportunities and salary increases in Rwanda.
 
-They are not qualified for the following jobs: {unqualified_jobs}.
+**INSTRUCTIONS**
+1.  **Analyze the Data:** Identify the most frequently required skills in the `unqualified_jobs` list that the user is missing.
+2.  **Prioritize by Impact:** Determine which of those missing skills leads to the highest potential salary increase and opens up the most job opportunities.
+3.  **Generate Recommendations:** Provide a concise, data-driven explanation for each recommended skill.
+4.  **Output Pure JSON:** Your response MUST be only the JSON object, with no markdown formatting or commentary.
 
-Analyze the user's skill gap and recommend the top 1-2 skills they should learn to unlock the most significant job opportunities. 
-Provide a brief explanation for each recommendation and the potential salary increase.
+**EXAMPLE**
+*If a user knows HTML/CSS and the data shows many high-paying jobs require 'React', your output should be...*
 
-Your response should be in JSON format, with the following structure:
+```json
+{{
+  "recommendations": [
+    {{
+      "skill": "React",
+      "explanation": "React is the most in-demand frontend library in Rwanda, required for over 60% of mid-level web development jobs. Learning it can increase your salary potential by up to 300,000 RWF.",
+      "potential_salary_increase_rwf": 300000
+    }}
+  ]
+}}
+```
+
+**RESPONSE FORMAT**
+```json
 {{
   "recommendations": [
     {{
       "skill": "<skill_name>",
-      "explanation": "<explanation>",
-      "potential_salary_increase_rwf": <salary_increase>
+      "explanation": "<data-driven_explanation>",
+      "potential_salary_increase_rwf": <salary_increase_integer>
     }}
   ]
 }}
-"""
+```'''
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        response = await model.generate_content_async(prompt)
+        return clean_and_parse_json(response.text)
+    except ResourceExhausted as e:
+        raise HTTPException(status_code=429, detail=f"API quota exceeded: {e}")
+    except Exception as e:
+        # Catch other potential errors during API call
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred with the AI model: {e}")
 
-    # Call the Gemini API
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    response = model.generate_content(prompt)
+async def get_learning_path(skills_to_learn: list[str]) -> dict:
+    """Generates a personalized learning path for a given set of skills."""
+    prompt = f'''**SYSTEM PROMPT**
 
-    # Extract the JSON from the response
-    json_response = json.loads(response.text.replace("```json", "").replace("```", ""))
+You are an expert curriculum designer for the SkillSync application, focused on the Rwandan job market.
 
-    return {"analysis": json_response}
+**CONTEXT**
+- **Skills to Learn:** {skills_to_learn}
+- **Your Goal:** Generate a practical, project-based learning path to help a user acquire these skills and become job-ready in Rwanda.
 
-@router.post("/salary-impact-calculator")
-def salary_impact_calculator(request: schemas.SalaryImpactRequest):
-    """
-    Calculates the potential salary impact of learning a new skill.
-    """
-    # Find the user's current maximum potential salary
-    current_max_salary = 0
-    for job in database.JOBS:
-        if set(job["required_skills"]).issubset(set(request.skills)):
-            if job["salaryRange"]["max"] > current_max_salary:
-                current_max_salary = job["salaryRange"]["max"]
+**INSTRUCTIONS**
+1.  **Create a Module for Each Skill:** For each skill in the list, create a learning module.
+2.  **Find a High-Quality Resource:** For each module, recommend a specific, high-quality, and preferably free online resource (e.g., a specific YouTube playlist, a freeCodeCamp course, etc.).
+3.  **Design a Mini-Project:** For each module, design a small, practical project that allows the user to apply the skill in a way that is relevant to the Rwandan job market.
+4.  **Output Pure JSON:** Your response MUST be only the JSON object, with no markdown formatting or commentary.
 
-    # Find the new maximum potential salary with the new skill
-    new_skills = request.skills + [request.new_skill]
-    new_max_salary = 0
-    for job in database.JOBS:
-        if set(job["required_skills"]).issubset(set(new_skills)):
-            if job["salaryRange"]["max"] > new_max_salary:
-                new_max_salary = job["salaryRange"]["max"]
-
-    # Calculate the potential salary increase, ensuring it's not negative
-    salary_increase = max(0, new_max_salary - current_max_salary)
-
-    return {"potential_salary_increase_rwf": salary_increase}
-
-
-@router.post("/generate-curriculum")
-def generate_curriculum(request: schemas.CurriculumRequest):
-    """
-    Generates a personalized learning path for a user based on a list of skills.
-    """
-    # Create a prompt for the Gemini API
-    prompt = f"""You are an expert curriculum designer creating job-market-driven learning paths.
-
-A user wants to learn the following skills: {request.skills_to_learn}.
-
-Design a practical, project-based learning experience for these skills. 
-For each skill, provide a link to a learning resource and a brief project description to test their knowledge.
-
-Your response should be in JSON format, with the following structure:
+**RESPONSE FORMAT**
+```json
 {{
   "learning_path": [
     {{
       "skill": "<skill_name>",
-      "resource": "<resource_link>",
+      "resource": "<resource_url>",
       "project": "<project_description>"
     }}
   ]
 }}
-"""
+```'''
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        response = await model.generate_content_async(prompt)
+        return clean_and_parse_json(response.text)
+    except ResourceExhausted as e:
+        raise HTTPException(status_code=429, detail=f"API quota exceeded: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred with the AI model: {e}")
 
-    # Call the Gemini API
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    response = model.generate_content(prompt)
+@router.post("/generate-full-analysis", response_model=schemas.FullAnalysis)
+async def generate_full_analysis(request: schemas.SkillsRequest):
+    """Orchestrates the full analysis of a user's skills."""
+    dev_mode = os.getenv("DEV_MODE", "false").lower() == "true"
 
-    # Extract the JSON from the response
-    json_response = json.loads(response.text.replace("```json", "").replace("```", ""))
+    if dev_mode:
+        # In dev mode, return a complete, valid, pre-defined response
+        return {
+            "currentOpportunities": database.JOBS,
+            "marketInsights": ["In dev mode: Rwanda's tech sector is booming.", "Dev mode insight: Fintech is a key growth area."],
+            "recommendations": {
+                "salaryProjection": {"current": 550000, "potential": 800000},
+                "skillGaps": [
+                    {"skill": "TypeScript", "explanation": "Adds type safety to your projects.", "potential_salary_increase_rwf": 100000},
+                    {"skill": "Testing", "explanation": "Ensures code quality and reliability.", "potential_salary_increase_rwf": 50000}
+                ],
+                "learningPath": [
+                    {"skill": "TypeScript", "resource": "https://www.typescriptlang.org/", "project": "Convert a small JS project to TypeScript."},
+                    {"skill": "Testing", "resource": "https://jestjs.io/", "project": "Write unit tests for a key component."}
+                ],
+                "nextLevelOpportunities": [job for job in database.JOBS if job["experienceLevel"] == "Senior"]
+            }
+        }
 
-    return {"curriculum": json_response}
+    try:
+        # In a real application, these would be parallelized
+        gap_analysis_data = await get_opportunity_gap_analysis(request.skills)
+        skill_gaps = gap_analysis_data.get("recommendations", [])
+        skills_to_learn = [skill["skill"] for skill in skill_gaps]
 
+        learning_path_data = await get_learning_path(skills_to_learn)
+        learning_path = learning_path_data.get("learning_path", [])
 
-@router.post("/market-insights")
-def market_insights(request: schemas.Skills):
-    """
-    Generates market insights based on a user's skills.
-    """
-    # Create a prompt for the Gemini API
-    prompt = f"""You are a Rwandan job market analyst.
+        # Placeholder data for the new sections
+        current_opportunities = database.JOBS
+        market_insights = ["Market insight 1", "Market insight 2"]
+        salary_projection = {"current": 500000, "potential": 750000}
+        
+        # Calculate next level opportunities
+        next_level_opportunities = [j for j in database.JOBS if not set(j["required_skills"]).issubset(set(request.skills)) and set(j["required_skills"]).issubset(set(request.skills + skills_to_learn))]
 
-A user has the following skills: {request.skills}.
+        return {
+            "currentOpportunities": current_opportunities,
+            "marketInsights": market_insights,
+            "recommendations": {
+                "salaryProjection": salary_projection,
+                "skillGaps": skill_gaps,
+                "learningPath": learning_path,
+                "nextLevelOpportunities": next_level_opportunities,
+            },
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
-Based on these skills, provide 3-4 key insights about the current job market in Rwanda. 
-Focus on trends, opportunities, and potential challenges.
+@router.post("/coach-chat", response_model=schemas.CoachChatResponse)
+async def coach_chat(request: schemas.CoachChatRequest):
+    """Provides AI-powered coaching based on user analysis and questions."""
+    prompt = f'''**SYSTEM PROMPT**
 
-Your response should be in JSON format, with the following structure:
+You are a {request.role} within the SkillSync application, an AI-powered career intelligence tool for the Rwandan job market. Your goal is to provide clear, actionable, and encouraging advice to help users achieve their career goals in Rwanda.
+
+**CONTEXT**
+- **User's Career Analysis:** {request.analysis}
+- **User's Question:** "{request.question}"
+- **Your Persona:** {request.role}
+
+**INSTRUCTIONS**
+1.  **Stay On-Topic:** Your answer must directly address the user's question within the context of their career analysis and the Rwandan job market.
+2.  **Be Actionable:** Provide concrete next steps. Instead of "learn more skills," suggest "focus on learning React by building a small e-commerce front-end to add to your portfolio."
+3.  **Be Encouraging:** Frame your advice in a positive and motivating way.
+4.  **Generate Follow-ups:** Provide three concise, relevant follow-up questions that the user might have.
+5.  **Output Pure JSON:** Your response MUST be only the JSON object, with no markdown formatting or commentary.
+
+**EXAMPLE**
+*If the user asks, "What should I do next?" your response should be structured like this:*
+
+```json
 {{
-  "insights": [
-    "<insight_1>",
-    "<insight_2>",
-    "<insight_3>"
+  "answer": "Based on your analysis, the highest-impact next step is to learn TypeScript. It is required for many of the 'Next-Level Opportunities' identified for you and can increase your salary potential significantly. A great first step would be to convert one of your existing JavaScript projects to TypeScript.",
+  "follow_ups": [
+    "Can you give me a 2-week learning plan for TypeScript?",
+    "Which companies in Rwanda use TypeScript?",
+    "How much more can I earn with TypeScript?"
   ]
 }}
-"""
+```
 
-    # Call the Gemini API
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    response = model.generate_content(prompt)
-
-    # Extract the JSON from the response
-    json_response = json.loads(response.text.replace("```json", "").replace("```", ""))
-
-    return {"insights": json_response}
-
-
-@router.post("/coach-chat")
-def coach_chat(request: schemas.ChatRequest):
-    """
-    Lightweight chat for tutor/coach/mentor personas grounded in the user's analysis JSON.
-    Returns a structured response with short answer and 3 suggested follow-ups.
-    """
-    persona = request.role or "coach"
-    prompt = f"""You are a {persona} for Rwanda job seekers. Answer concisely (<=120 words).
-User analysis JSON: {json.dumps(request.analysis)}
-Question: {request.question}
-Return pure JSON:
+**RESPONSE FORMAT**
+```json
 {{
-  "answer": "...",
-  "follow_ups": ["...", "...", "..."]
+  "answer": "<your_actionable_answer>",
+  "follow_ups": [
+    "<question_1>",
+    "<question_2>",
+    "<question_3>"
+  ]
 }}
-"""
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    response = model.generate_content(prompt)
-    data = json.loads(response.text.replace("```json", "").replace("```", ""))
-    return {"chat": data}
+```'''
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        response = await model.generate_content_async(prompt)
+        # The response from the AI is a JSON string, so we parse it
+        chat_data = clean_and_parse_json(response.text)
+        return {"chat": chat_data}
+    except ResourceExhausted:
+        raise HTTPException(status_code=429, detail="API quota exceeded.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred with the AI model: {e}")
 
+@router.post("/generate-course", response_model=schemas.CourseResponse)
+async def generate_course(request: schemas.CourseRequest):
+    """Generates a course outline for a given skill."""
+    prompt = f'''**SYSTEM PROMPT**
 
-@router.post("/generate-course")
-def generate_course(request: schemas.GenerateCourseRequest):
-    """
-    Generates a compact course outline (modules->lessons->resources) for a target skill
-    with links (can include YouTube) and practical projects.
-    """
-    level = request.level or "beginner"
-    prompt = f"""You are a curriculum generator for Rwanda's market.
-Create a 2-week intensive course for skill: {request.target_skill} (level: {level}).
-Return JSON with 4-6 modules, each with lessons and resource links (prefer free/YouTube when useful), and one capstone project.
-Schema:
+You are an expert curriculum designer for the SkillSync application, focused on the Rwandan job market.
+
+**CONTEXT**
+- **Target Skill:** {request.target_skill}
+- **User Level:** {request.level}
+- **Your Goal:** Generate a practical, 2-week course outline to help a user learn this skill and build a portfolio project.
+
+**INSTRUCTIONS**
+1.  **Create a Title:** The title should be practical, e.g., "React in 2 Weeks (Practical)".
+2.  **Define Modules:** Create 2-3 modules with descriptive titles (e.g., "Foundations", "Core Concepts").
+3.  **Add Lessons:** For each module, add 2-3 lessons with a title and a link to a high-quality, free resource.
+4.  **Design a Project:** Create a final project with a title and a brief description.
+5.  **Output Pure JSON:** Your response MUST be only the JSON object, with no markdown formatting or commentary.
+
+**RESPONSE FORMAT**
+```json
 {{
-  "title": "",
-  "duration": "2 weeks",
-  "modules": [{{"title": "", "lessons": [{{"title": "", "resource": "url"}}]}}],
-  "project": {{"title": "", "brief": ""}}
-}}
-"""
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
-    response = model.generate_content(prompt)
-    data = json.loads(response.text.replace("```json", "").replace("```", ""))
-    return {"course": data}
+  "course": {{
+    "title": "<course_title>",
+    "duration": "2 weeks",
+    "modules": [
+      {{
+        "title": "<module_title>",
+        "lessons": [
+          {{
+            "title": "<lesson_title>",
+            "resource": "<resource_url>"
+          }}
+        ]
+      }}
+    ],
+    "project": {{
+      "title": "<project_title>",
+      "brief": "<project_brief>"
+    }}
+  }}
+}}```'''
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        response = await model.generate_content_async(prompt)
+        return clean_and_parse_json(response.text)
+    except ResourceExhausted as e:
+        raise HTTPException(status_code=429, detail=f"API quota exceeded: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred with the AI model: {e}")

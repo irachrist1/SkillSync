@@ -20,6 +20,7 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
 
   // Calculate match scores and sort by relevance (memoized)
   const jobsWithScores = useMemo(() => {
+    if (!jobs) return [];
     return jobs
       .map(job => ({
         ...job,

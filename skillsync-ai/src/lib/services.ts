@@ -1,6 +1,6 @@
 // Client-side service layer to switch between backend and local stubs
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7800';
+const API_URL = '/api';
 const USE_BACKEND = (process.env.NEXT_PUBLIC_USE_BACKEND || 'true').toLowerCase() === 'true';
 
 let fallbackUsed = false;
@@ -30,11 +30,40 @@ function readCache(path: string, body: any): any | null {
   } catch { return null; }
 }
 
-async function postJson(path: string, body: any) {
+async function postJson(path: string, body: any, onChunk?: (chunk: any) => void) {
   const url = `${API_URL}${path}`;
   const attempt = async () => fetch(url, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
   });
+
+  if (path.includes('coach-chat') && onChunk) {
+    const response = await attempt();
+    if (!response.body) return;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() || ''; // Keep the last partial line
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const json = JSON.parse(line.substring(6));
+            onChunk(json);
+          } catch (e) {
+            console.error('Failed to parse stream chunk:', e);
+          }
+        }
+      }
+    }
+    return; // End of stream
+  }
+
   let lastErr: any = null;
   for (let i = 0; i < 2; i++) { // 2 attempts
     try {
@@ -159,30 +188,16 @@ function stubGenerateCourse(body: any) {
 
 // ---- Public API
 export const Services = {
-  matchJobs(skills: string[]) {
-    return useBackend() ? postJson('/skillsync/match-jobs', { skills }) : stubMatchJobs(skills);
+  generateFullAnalysis(skills: string[]) {
+    return postJson('/generate-full-analysis', { skills });
   },
-  gapAnalysis(skills: string[]) {
-    return useBackend() ? postJson('/skillsync/opportunity-gap-analysis', { skills }) : stubGapAnalysis(skills);
-  },
-  salaryImpact(skills: string[], new_skill: string) {
-    return useBackend() ? postJson('/skillsync/salary-impact-calculator', { skills, new_skill }) : stubSalaryImpact(skills, new_skill);
-  },
-  generateCurriculum(skills_to_learn: string[]) {
-    return useBackend() ? postJson('/skillsync/generate-curriculum', { skills_to_learn }) : stubCurriculum(skills_to_learn);
-  },
-  marketInsights(skills: string[]) {
-    return useBackend() ? postJson('/skillsync/market-insights', { skills }) : stubMarketInsights(skills);
-  },
-  coachChat(role: string, analysis: any, question: string) {
-    return useBackend() ? postJson('/skillsync/coach-chat', { role, analysis, question }) : stubCoachChat({ role, analysis, question });
+  coachChat(role: string, analysis: any, question: string, onChunk: (chunk: any) => void) {
+    return useBackend() ? postJson('/coach-chat', { role, analysis, question }, onChunk) : stubCoachChat({ role, analysis, question });
   },
   generateCourse(target_skill: string, level?: string) {
-    return useBackend() ? postJson('/skillsync/generate-course', { target_skill, level }) : stubGenerateCourse({ target_skill, level });
+    return useBackend() ? postJson('/generate-course', { target_skill, level }) : stubGenerateCourse({ target_skill, level });
   },
   useBackend,
   resetFallbackFlag,
   wasFallbackUsed,
 };
-
-
