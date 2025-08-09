@@ -1,6 +1,18 @@
 # SkillSync API Documentation
 
-Welcome! This guide explains how to interact with the SkillSync API and run the entire application.
+Welcome! This guide provides a comprehensive overview of the SkillSync API, its architecture, and how to interact with it.
+
+## System Architecture
+
+The SkillSync application is composed of two primary services: a **Frontend Application** and a **Backend API**. This separation of concerns allows for a more scalable and maintainable system.
+
+*   **Frontend Application:** A [Next.js](https://nextjs.org/) application responsible for the user interface and user experience. It is a single-page application (SPA) that runs in the user's browser. The frontend communicates with the backend API to fetch data and perform actions.
+
+*   **Backend API:** A [FastAPI](https://fastapi.tiangolo.com/) (Python) application that serves as the system's core. It handles business logic, data processing, and integration with external services like the Gemini API for AI-powered features.
+
+*   **Communication:** The frontend and backend communicate via a RESTful API. The frontend sends HTTP requests to the backend, and the backend responds with JSON data.
+
+*   **Orchestration:** Both services are containerized using Docker and managed with Docker Compose. This ensures a consistent and reproducible environment for development and deployment.
 
 ## Running the Application (Frontend & Backend)
 
@@ -29,7 +41,7 @@ All endpoints are prefixed with `/skillsync`.
 
 *   **URL:** `/skillsync/match-jobs`
 *   **Method:** `POST`
-*   **Description:** Takes a list of a user's current skills and returns a list of jobs from the database that they are fully qualified for.
+*   **Description:** Takes a list of a user's current skills and returns a list of jobs from the database that they are fully qualified for. This is used by the frontend to display suitable job openings to the user.
 
 **Request Body Schema:**
 
@@ -75,7 +87,7 @@ curl -X POST http://localhost:7800/skillsync/match-jobs \
 
 *   **URL:** `/skillsync/opportunity-gap-analysis`
 *   **Method:** `POST`
-*   **Description:** Takes a user's skills and uses the Gemini AI to recommend the top 1-2 skills they should learn to unlock better job opportunities. The AI response is now directly parsed into JSON.
+*   **Description:** Takes a user's skills and uses the Gemini AI to recommend the top 1-2 skills they should learn to unlock better job opportunities. The frontend uses this to provide personalized career guidance. The AI response is now directly parsed into JSON.
 
 **Request Body Schema:**
 
@@ -93,7 +105,7 @@ curl -X POST http://localhost:7800/skillsync/match-jobs \
     "recommendations": [
       {
         "skill": "React",
-        "explanation": "React is highly demanded in Rwanda\'s tech scene...",
+        "explanation": "React is highly demanded in Rwanda\u0027s tech scene...",
         "potential_salary_increase_rwf": 250000
       }
     ]
@@ -108,7 +120,7 @@ curl -X POST http://localhost:7800/skillsync/match-jobs \
 
 *   **URL:** `/skillsync/salary-impact-calculator`
 *   **Method:** `POST`
-*   **Description:** Calculates the potential increase in a user\'s *maximum* potential salary if they were to learn a specific new skill. The calculation logic has been improved to ensure a non-negative increase.
+*   **Description:** Calculates the potential increase in a user\'s *maximum* potential salary if they were to learn a specific new skill. This helps users make informed decisions about their learning path. The calculation logic has been improved to ensure a non-negative increase.
 
 **Request Body Schema:**
 
@@ -134,7 +146,7 @@ curl -X POST http://localhost:7800/skillsync/match-jobs \
 
 *   **URL:** `/skillsync/generate-curriculum`
 *   **Method:** `POST`
-*   **Description:** Takes a list of skills a user wants to learn and uses the Gemini AI to generate a personalized, project-based learning path. The AI response is now directly parsed into JSON.
+*   **Description:** Takes a list of skills a user wants to learn and uses the Gemini AI to generate a personalized, project-based learning path. The frontend displays this curriculum to the user to guide their learning. The AI response is now directly parsed into JSON.
 
 **Request Body Schema:**
 
@@ -166,7 +178,7 @@ curl -X POST http://localhost:7800/skillsync/match-jobs \
 
 *   **URL:** `/skillsync/market-insights`
 *   **Method:** `POST`
-*   **Description:** Generates market insights based on a user\'s skills using the Gemini AI. The AI response is now directly parsed into JSON.
+*   **Description:** Generates market insights based on a user\'s skills using the Gemini AI. This provides users with a broader understanding of the job market. The AI response is now directly parsed into JSON.
 
 **Request Body Schema:**
 
