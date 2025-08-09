@@ -14,7 +14,9 @@ downloads/
 eggs/
 .eggs/
 lib/
+bin/
 lib64/
+lib64
 parts/
 sdist/
 var/
@@ -156,4 +158,3 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.
 #  Avoid committing project specific JetBrains files to the repository.
 .idea/
-pyvenv.cfg

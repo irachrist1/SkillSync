@@ -21,6 +21,13 @@ export function CoachChat({ open, onClose, analysis }: CoachChatProps) {
   const ask = async () => {
     try {
       setLoading(true);
+      setAnswer(''); // Clear previous answer for new stream
+      setSuggestions([]); // Clear previous suggestions
+
+      // TODO: Implement streaming logic here.
+      // The backend (skillsyncAPI/app/api/endpoints.py) would need to be modified
+      // to return a StreamingResponse, and the frontend would consume it incrementally.
+      // For now, it waits for the full response.
       const res = await (await import('@/lib/services')).Services.coachChat(role, analysis, question);
       setAnswer(res.chat?.answer || '');
       setSuggestions(res.chat?.follow_ups || []);
@@ -53,7 +60,12 @@ export function CoachChat({ open, onClose, analysis }: CoachChatProps) {
 
         {answer && (
           <div className="mt-4 p-3 bg-gray-50 rounded border text-sm">
-            <div className="font-medium mb-1">Coach:</div>
+            <div className="font-medium mb-1 flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 mr-2 text-blue-600">
+                <path fillRule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 10.5a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zm-3 0a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75zm-3.75 0a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-3a.75.75 0 01.75-.75z" clipRule="evenodd" />
+              </svg>
+              {role.charAt(0).toUpperCase() + role.slice(1)}:
+            </div>
             <div className="text-gray-800">{answer}</div>
             {suggestions.length>0 && (
               <div className="mt-2">

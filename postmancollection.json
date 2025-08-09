@@ -1,34 +1,41 @@
 {
 	"info": {
 		"_postman_id": "a8f5b4a1-1b3a-4b1e-8b0a-9b8d7c6e3c2d",
-		"name": "SkillSync API",
+		"name": "SkillSync API - Simplified Flow",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Full Analysis",
+			"name": "1. Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/health",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"health"
+					]
+				}
+			},
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
-							    "pm.response.to.have.status(200);",
-								"});",
-							"const response = pm.response.json();",
-							"const requestBody = JSON.parse(pm.request.body.raw);",
-							"const analysisSummary = {",
-							    "userSkills: requestBody.skills,",
-							    "recommendedSkills: response.recommendations.skillGaps.map(skill => skill.skill),",
-							    "salaryProjection: response.recommendations.salaryProjection,",
-							    "nextLevelJobs: response.recommendations.nextLevelOpportunities.map(job => job.title).slice(0, 3)",
-							"};",
-							"pm.environment.set(\"chatContext\", JSON.stringify(analysisSummary));"
+							"    pm.response.to.have.status(200);",
+							"});"
 						],
 						"type": "text/javascript"
 					}
 				}
-			],
+			]
+		},
+		{
+			"name": "2. Full Analysis",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -51,67 +58,27 @@
 					]
 				}
 			},
-			"response": []
-		},
-		{
-			"name": "Coach Chat",
 			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"const chatContext = pm.environment.get(\"chatContext\");",
-							"const requestBody = {",
-							    "question": "Based on my analysis, what is the single most important skill for me to learn next and why? Give me a concrete first step.",",
-							    "role": \"Career Coach\",",
-							    "analysis": {}
-};",
-							"if (chatContext) {",
-							"    requestBody.analysis = JSON.parse(chatContext);",
-							"}",
-							"pm.request.body.update(JSON.stringify(requestBody));"
-						],
-						"type": "text/javascript"
-					}
-				},
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
-							    "pm.response.to.have.status(200);",
-							    "});"
+							"    pm.response.to.have.status(200);",
+							"});",
+						"pm.test(\"Save first recommended skill\", function () {",
+						"    const response = pm.response.json();",
+						"    const firstSkill = response.recommendations.skillGaps[0].skill;",
+						"    pm.environment.set(\"recommendedSkill\", firstSkill);",
+						"});"
 						],
 						"type": "text/javascript"
 					}
 				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{baseUrl}}/coach-chat",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"coach-chat"
-					]
-				}
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Generate Course",
+			"name": "3. Generate Course",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -122,7 +89,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"target_skill\": \"python\",\n    \"level\": \"beginner\"\n}"
+					"raw": "{\n    \"target_skill\": \"{{recommendedSkill}}\",\n    \"level\": \"beginner\"\n}"
 				},
 				"url": {
 					"raw": "{{baseUrl}}/generate-course",
@@ -134,34 +101,67 @@
 					]
 				}
 			},
-			"response": []
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+						"pm.test(\"Response contains a course outline\", function () {",
+						"    const response = pm.response.json();",
+						"    pm.expect(response).to.have.property(\"course_outline\");",
+						"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
 		},
 		{
-			"name": "Health Check",
+			"name": "4. Coach Chat",
 			"request": {
-				"method": "GET",
-				"header": [],
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"question\": \"What are the job prospects for someone with my skills?\",\n    \"role\": \"Career Coach\",\n    \"analysis\": {}\n}"
+				},
 				"url": {
-					"raw": "{{baseUrl}}/health",
+					"raw": "{{baseUrl}}/coach-chat",
 					"host": [
 						"{{baseUrl}}"
 					],
 					"path": [
-						"health"
+						"coach-chat"
 					]
 				}
 			},
-			"response": []
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
 		}
 	],
 	"variable": [
 		{
 			"key": "baseUrl",
 			"value": "http://localhost:7800"
-		},
-		{
-			"key": "chatContext",
-			"value": ""
 		}
 	]
 }

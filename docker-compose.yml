@@ -14,7 +14,7 @@ services:
       - "3000:3000"
     environment:
       # This URL points to the backend service within the Docker network
-      - NEXT_PUBLIC_API_URL=http://backend_api:7800/skillsync
+      - NEXT_PUBLIC_API_URL=http://backend_api:7800
     networks:
       - skillsync_network
     depends_on:

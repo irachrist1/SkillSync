@@ -83,6 +83,35 @@ You are a hyper-focused career intelligence analyst for Rwanda's digital economy
         # Catch other potential errors during API call
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred with the AI model: {e}")
 
+async def get_market_insights() -> list[str]:
+    """Generates high-level market insights for Rwanda's digital economy."""
+    prompt = f'''**SYSTEM PROMPT**
+
+You are a highly knowledgeable market analyst specializing in Rwanda's digital economy. Your goal is to provide concise, actionable, and relevant market insights for individuals looking to advance their careers in this sector.
+
+**INSTRUCTIONS**
+1.  **Identify Key Trends:** Based on your knowledge, identify 2-3 significant trends or opportunities in Rwanda's current digital economy.
+2.  **Focus on Actionability:** Each insight should implicitly or explicitly suggest a direction for career growth or skill development.
+3.  **Output Pure JSON Array:** Your response MUST be only a JSON array of strings, with no markdown formatting or commentary.
+
+**EXAMPLE RESPONSE**
+```json
+[
+  "The demand for cybersecurity specialists is rapidly increasing due to growing digital infrastructure and financial services.",
+  "Fintech innovations are creating new roles; understanding mobile money and digital payment systems is crucial.",
+  "E-commerce platforms are expanding, driving a need for full-stack developers with logistics and payment integration skills."
+]
+```
+'''
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        response = await model.generate_content_async(prompt)
+        return clean_and_parse_json(response.text)
+    except ResourceExhausted as e:
+        raise HTTPException(status_code=429, detail=f"API quota exceeded: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred with the AI model: {e}")
+
 async def get_learning_path(skills_to_learn: list[str]) -> dict:
     """Generates a personalized learning path for a given set of skills."""
     prompt = f'''**SYSTEM PROMPT**
@@ -153,9 +182,9 @@ async def generate_full_analysis(request: schemas.SkillsRequest):
         learning_path_data = await get_learning_path(skills_to_learn)
         learning_path = learning_path_data.get("learning_path", [])
 
-        # Placeholder data for the new sections
+        # In a real application, these would be parallelized
         current_opportunities = database.JOBS
-        market_insights = ["Market insight 1", "Market insight 2"]
+        market_insights = await get_market_insights()
         salary_projection = {"current": 500000, "potential": 750000}
         
         # Calculate next level opportunities
