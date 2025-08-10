@@ -1,18 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { CoachChat } from '@/components/CoachChat';
-import { LocalStorageManager } from '@/lib/localStorage';
+import { UserSkill } from '@/types';
 
-export function ChatLauncher() {
+export function ChatLauncher({ userSkills, aiAnalysis }: { userSkills: UserSkill[], aiAnalysis: any }) {
   const [open, setOpen] = useState(false);
-  const [analysis, setAnalysis] = useState<any | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const a = LocalStorageManager.getAIAnalysis();
-    setAnalysis(a);
-  }, [open]);
 
   return (
     <>
@@ -23,7 +16,7 @@ export function ChatLauncher() {
       >
         💬
       </button>
-      <CoachChat open={open} onClose={() => setOpen(false)} analysis={analysis} />
+      <CoachChat open={open} onClose={() => setOpen(false)} analysis={aiAnalysis} userSkills={userSkills} />
     </>
   );
 }

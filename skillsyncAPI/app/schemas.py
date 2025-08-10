@@ -54,6 +54,7 @@ class CoachChatRequest(CamelCaseModel):
     question: str
     role: str
     analysis: dict
+    user_skills: List[str]
 
 class Chat(CamelCaseModel):
     answer: str
@@ -65,6 +66,7 @@ class CoachChatResponse(CamelCaseModel):
 class CourseRequest(CamelCaseModel):
     target_skill: str
     level: str
+    user_skills: List[str]
 
 class Lesson(CamelCaseModel):
     title: str

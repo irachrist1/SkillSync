@@ -214,6 +214,7 @@ You are a {request.role} within the SkillSync application, an AI-powered career 
 
 **CONTEXT**
 - **User's Career Analysis:** {request.analysis}
+- **User's Current Skills:** {request.user_skills}
 - **User's Question:** "{request.question}"
 - **Your Persona:** {request.role}
 
@@ -270,6 +271,7 @@ You are an expert curriculum designer for the SkillSync application, focused on 
 **CONTEXT**
 - **Target Skill:** {request.target_skill}
 - **User Level:** {request.level}
+- **User's Current Skills:** {request.user_skills}
 - **Your Goal:** Generate a practical, 2-week course outline to help a user learn this skill and build a portfolio project.
 
 **INSTRUCTIONS**

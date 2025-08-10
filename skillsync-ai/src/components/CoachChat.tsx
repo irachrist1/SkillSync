@@ -7,9 +7,10 @@ interface CoachChatProps {
   open: boolean;
   onClose: () => void;
   analysis: any;
+  userSkills: UserSkill[];
 }
 
-export function CoachChat({ open, onClose, analysis }: CoachChatProps) {
+export function CoachChat({ open, onClose, analysis, userSkills }: CoachChatProps) {
   const [role, setRole] = useState<'tutor' | 'coach' | 'mentor'>('coach');
   const [question, setQuestion] = useState('What should I do next to unlock the best job?');
   const [answer, setAnswer] = useState<string>('');
@@ -19,16 +20,27 @@ export function CoachChat({ open, onClose, analysis }: CoachChatProps) {
   if (!open) return null;
 
   const ask = async () => {
+    if (!userSkills || userSkills.length === 0) {
+      setAnswer("Please add some skills first before asking the coach!");
+      return;
+    }
     try {
       setLoading(true);
       setAnswer(''); // Clear previous answer for new stream
       setSuggestions([]); // Clear previous suggestions
 
-      // TODO: Implement streaming logic here.
-      // The backend (skillsyncAPI/app/api/endpoints.py) would need to be modified
-      // to return a StreamingResponse, and the frontend would consume it incrementally.
-      // For now, it waits for the full response.
-      const res = await (await import('@/lib/services')).Services.coachChat(role, analysis, question);
+      const skillsList = userSkills.map(s => s.name.toLowerCase());
+
+      // Create a deep copy of analysis and convert Date objects to ISO strings
+      const serializableAnalysis = JSON.parse(JSON.stringify(analysis));
+      if (serializableAnalysis && serializableAnalysis.lastAnalyzed) {
+        serializableAnalysis.lastAnalyzed = new Date(serializableAnalysis.lastAnalyzed).toISOString();
+      }
+      if (serializableAnalysis && serializableAnalysis.userProfile && serializableAnalysis.userProfile.lastUpdated) {
+        serializableAnalysis.userProfile.lastUpdated = new Date(serializableAnalysis.userProfile.lastUpdated).toISOString();
+      }
+
+      const res = await (await import('@/lib/services')).Services.coachChat(role, serializableAnalysis, question, skillsList);
       setAnswer(res.chat?.answer || '');
       setSuggestions(res.chat?.follow_ups || []);
     } finally {

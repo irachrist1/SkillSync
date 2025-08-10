@@ -31,44 +31,73 @@ To stop the services:
 docker-compose down
 ```
 
+### Development Mode (DEV_MODE)
+
+The Backend API supports a `DEV_MODE` environment variable. When `DEV_MODE` is set to `true`, the `/generate-full-analysis` endpoint will return hardcoded, predefined responses instead of making actual calls to the Gemini AI model. This is useful for development and testing to save on API token usage.
+
+To enable `DEV_MODE` when running with Docker Compose, ensure the `backend_api` service in `docker-compose.yml` has:
+
+```yaml
+    environment:
+      - DEV_MODE=true
+```
+
+When running the backend locally (outside Docker Compose), you can set the environment variable before launching the application:
+
+```bash
+# Linux/macOS
+export DEV_MODE=true
+uvicorn app.main:app --host 0.0.0.0 --port 7800
+
+# Windows (Command Prompt)
+set DEV_MODE=true
+uvicorn app.main:app --host 0.0.0.0 --port 7800
+```
+
 ---
 
 ## API Endpoints
 
-All endpoints are prefixed with `/skillsync`.
+All endpoints are served directly from the backend API (e.g., `http://localhost:7800/generate-full-analysis`). There is no `/skillsync` prefix.
 
-### 1. Match Jobs
+### 1. Generate Full Analysis
 
-*   **URL:** `/skillsync/match-jobs`
+*   **URL:** `/generate-full-analysis`
 *   **Method:** `POST`
-*   **Description:** Takes a list of a user's current skills and returns a list of jobs from the database that they are fully qualified for. This is used by the frontend to display suitable job openings to the user.
+*   **Description:** This is the primary orchestration endpoint. It takes a user's skills and performs a comprehensive analysis, including identifying skill gaps, recommending learning paths, providing market insights, and suggesting next-level job opportunities. It integrates multiple AI model calls (unless `DEV_MODE` is enabled).
 
-**Request Body Schema:**
+**Request Body Schema (`schemas.SkillsRequest`):**
 
 ```json
 {
-  "skills": ["string"]
+  "skills": ["string", "string", ...]
 }
 ```
 
 **Example Request (`curl`):**
 
 ```bash
-curl -X POST http://localhost:7800/skillsync/match-jobs \
+curl -X POST http://localhost:7800/generate-full-analysis \
 -H "Content-Type: application/json" \
 -d '{
-  "skills": ["html", "css", "javascript"]
+  "skills": ["python", "javascript", "html", "css"]
 }'
 ```
 
-**Example Response:**
+**Example Response (`schemas.FullAnalysis`):**
 
 ```json
 {
-  "qualified_jobs": [
+  "currentOpportunities": [
     {
       "id": 1,
       "title": "Entry-level Web Developer",
+      "company": "Kigali Devs",
+      "location": "Kigali, Rwanda",
+      "industry": "Technology",
+      "jobType": "Full-time",
+      "experienceLevel": "Entry",
+      "postedDate": "2025-08-01",
       "salaryRange": {
         "min": 150000,
         "max": 300000,
@@ -76,97 +105,51 @@ curl -X POST http://localhost:7800/skillsync/match-jobs \
       },
       "requiredSkills": ["html", "css", "javascript"]
     }
-  ]
-}
-```
-
----
-
-
-### 2. Opportunity Gap Analysis
-
-*   **URL:** `/skillsync/opportunity-gap-analysis`
-*   **Method:** `POST`
-*   **Description:** Takes a user's skills and uses the Gemini AI to recommend the top 1-2 skills they should learn to unlock better job opportunities. The frontend uses this to provide personalized career guidance. The AI response is now directly parsed into JSON.
-
-**Request Body Schema:**
-
-```json
-{
-  "skills": ["string"]
-}
-```
-
-**Example Response:**
-
-```json
-{
-  "analysis": {
-    "recommendations": [
+    // ... more job objects
+  ],
+  "marketInsights": [
+    "The demand for cybersecurity specialists is rapidly increasing due to growing digital infrastructure and financial services.",
+    "Fintech innovations are creating new roles; understanding mobile money and digital payment systems is crucial."
+  ],
+  "recommendations": {
+    "salaryProjection": {
+      "current": 500000,
+      "potential": 750000
+    },
+    "skillGaps": [
       {
         "skill": "React",
-        "explanation": "React is highly demanded in Rwanda\u0027s tech scene...",
+        "explanation": "React is highly demanded in Rwanda's tech scene...",
         "potential_salary_increase_rwf": 250000
       }
-    ]
-  }
-}
-```
-
----
-
-
-### 3. Salary Impact Calculator
-
-*   **URL:** `/skillsync/salary-impact-calculator`
-*   **Method:** `POST`
-*   **Description:** Calculates the potential increase in a user\'s *maximum* potential salary if they were to learn a specific new skill. This helps users make informed decisions about their learning path. The calculation logic has been improved to ensure a non-negative increase.
-
-**Request Body Schema:**
-
-```json
-{
-  "skills": ["string"],
-  "new_skill": "string"
-}
-```
-
-**Example Response:**
-
-```json
-{
-  "potential_salary_increase_rwf": 300000
-}
-```
-
----
-
-
-### 4. Generate Curriculum
-
-*   **URL:** `/skillsync/generate-curriculum`
-*   **Method:** `POST`
-*   **Description:** Takes a list of skills a user wants to learn and uses the Gemini AI to generate a personalized, project-based learning path. The frontend displays this curriculum to the user to guide their learning. The AI response is now directly parsed into JSON.
-
-**Request Body Schema:**
-
-```json
-{
-  "skills_to_learn": ["string"]
-}
-```
-
-**Example Response:**
-
-```json
-{
-  "curriculum": {
-    "learning_path": [
+      // ... more skill gaps
+    ],
+    "learningPath": [
       {
         "skill": "SQL",
         "resource": "https://example.com/sql-tutorial",
         "project": "Build a database for an e-commerce platform."
       }
+      // ... more learning path items
+    ],
+    "nextLevelOpportunities": [
+      {
+        "id": 4,
+        "title": "Full-stack Developer",
+        "company": "Go Kigali",
+        "location": "Kigali, Rwanda",
+        "industry": "Tourism",
+        "jobType": "Full-time",
+        "experienceLevel": "Senior",
+        "postedDate": "2025-08-05",
+        "salaryRange": {
+          "min": 600000,
+          "max": 1000000,
+          "currency": "RWF"
+        },
+        "requiredSkills": ["html", "css", "javascript", "react", "python", "fastapi", "sql", "git"]
+      }
+      // ... more next level job objects
     ]
   }
 }
@@ -174,32 +157,105 @@ curl -X POST http://localhost:7800/skillsync/match-jobs \
 
 ---
 
-### 5. Market Insights
+### 2. Coach Chat
 
-*   **URL:** `/skillsync/market-insights`
+*   **URL:** `/coach-chat`
 *   **Method:** `POST`
-*   **Description:** Generates market insights based on a user\'s skills using the Gemini AI. This provides users with a broader understanding of the job market. The AI response is now directly parsed into JSON.
+*   **Description:** Provides AI-powered coaching based on a user's career analysis and specific questions. The AI acts as a tutor, coach, or mentor based on the `role` provided.
 
-**Request Body Schema:**
+**Request Body Schema (`schemas.CoachChatRequest`):**
 
 ```json
 {
-  "skills": ["string"]
+  "question": "string",
+  "role": "tutor" | "coach" | "mentor",
+  "analysis": {} // The full AIAnalysis object from /generate-full-analysis
 }
 ```
 
-**Example Response:**
+**Example Request (`curl`):**
+
+```bash
+curl -X POST http://localhost:7800/coach-chat \
+-H "Content-Type: application/json" \
+-d '{
+  "question": "What should I do next to unlock the best job?",
+  "role": "coach",
+  "analysis": {
+    "userProfile": { /* ... */ },
+    "currentOpportunities": [ /* ... */ ],
+    "recommendations": { /* ... */ },
+    "marketInsights": [ /* ... */ ],
+    "lastAnalyzed": "2025-08-09T12:00:00Z"
+  }
+}'
+```
+
+**Example Response (`schemas.CoachChatResponse`):**
 
 ```json
 {
-  "insights": {
-    "insights": [
-      "Web Development remains the most in-demand skill in Rwanda.",
-      "FinTech and Mobile Money integration are critical for many new roles.",
-      "Data Analysis skills are seeing rapid growth in the Rwandan market."
+  "chat": {
+    "answer": "Based on your analysis, the highest-impact next step is to learn TypeScript. It is required for many of the 'Next-Level Opportunities' identified for you and can increase your salary potential significantly. A great first step would be to convert one of your existing JavaScript projects to TypeScript.",
+    "follow_ups": [
+      "Can you give me a 2-week learning plan for TypeScript?",
+      "Which companies in Rwanda use TypeScript?",
+      "How much more can I earn with TypeScript?"
     ]
   }
 }
 ```
 
 ---
+
+### 3. Generate Course
+
+*   **URL:** `/generate-course`
+*   **Method:** `POST`
+*   **Description:** Generates a personalized, project-based course outline for a specific skill and user level.
+
+**Request Body Schema (`schemas.CourseRequest`):**
+
+```json
+{
+  "target_skill": "string",
+  "level": "beginner" | "intermediate" | "advanced"
+}
+```
+
+**Example Request (`curl`):**
+
+```bash
+curl -X POST http://localhost:7800/generate-course \
+-H "Content-Type: application/json" \
+-d '{
+  "target_skill": "React",
+  "level": "beginner"
+}'
+```
+
+**Example Response (`schemas.CourseResponse`):**
+
+```json
+{
+  "course": {
+    "title": "React in 2 Weeks (Practical)",
+    "duration": "2 weeks",
+    "modules": [
+      {
+        "title": "Foundations of React",
+        "lessons": [
+          {
+            "title": "Introduction to React & JSX",
+            "resource": "https://www.youtube.com/watch?v=bMknfKXIFA8"
+          }
+        ]
+      }
+    ],
+    "project": {
+      "title": "Build a Simple To-Do App",
+      "brief": "Develop a basic To-Do application using React, focusing on components, state, and props."
+    }
+  }
+}
+```

@@ -140,6 +140,28 @@ export interface SkillCategory {
   demandLevel: 'very-high' | 'high' | 'medium' | 'low';
 }
 
+export interface Lesson {
+  title: string;
+  resource: string;
+}
+
+export interface Module {
+  title: string;
+  lessons: Lesson[];
+}
+
+export interface Project {
+  title: string;
+  brief: string;
+}
+
+export interface Course {
+  title: string;
+  duration: string;
+  modules: Module[];
+  project: Project;
+}
+
 // Rwanda-specific interfaces
 export interface RwandaJobMarket {
   industries: string[];

@@ -88,9 +88,9 @@
 					}
 				],
 				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"target_skill\": \"{{recommendedSkill}}\",\n    \"level\": \"beginner\"\n}"
-				},
+                    "mode": "raw",
+                    "raw": "{\n    \"target_skill\": \"{{recommendedSkill}}\",\n    \"level\": \"beginner\",\n    \"user_skills\": [\"html\", \"css\", \"javascript\"]\n}"
+                },
 				"url": {
 					"raw": "{{baseUrl}}/generate-course",
 					"host": [
@@ -130,9 +130,9 @@
 					}
 				],
 				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"question\": \"What are the job prospects for someone with my skills?\",\n    \"role\": \"Career Coach\",\n    \"analysis\": {}\n}"
-				},
+                    "mode": "raw",
+                    "raw": "{\n    \"question\": \"What are the job prospects for someone with my skills?\",\n    \"role\": \"Career Coach\",\n    \"analysis\": {},\n    \"user_skills\": [\"html\", \"css\", \"javascript\"]\n}"
+                },
 				"url": {
 					"raw": "{{baseUrl}}/coach-chat",
 					"host": [

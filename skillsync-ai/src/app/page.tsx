@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+export const dynamic = 'force-dynamic';
+
+import React, { useState, useCallback, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { WelcomeStep } from '@/components/WelcomeStep';
 import { SkillsStep } from '@/components/SkillsStep';
@@ -11,6 +13,8 @@ import { CoachChat } from '@/components/CoachChat';
 import { UserSkill, UserProfile, AIAnalysis } from '@/types';
 import { LocalStorageManager } from '@/lib/localStorage';
 import { Services } from '@/lib/services';
+import { ChatLauncher } from '@/components/ChatLauncher';
+// import { SearchParamsHandler } from '@/components/SearchParamsHandler'; // Removed as it's not used
 
 export default function HomePage() {
   const router = useRouter();
@@ -26,32 +30,14 @@ export default function HomePage() {
   const [generatedCourse, setGeneratedCourse] = useState<any | null>(null);
 
   useEffect(() => {
-    const stepFromQuery = searchParams.get('step');
-    const savedProfile = LocalStorageManager.getUserProfile();
-    const savedAnalysis = LocalStorageManager.getAIAnalysis();
-
-    if (stepFromQuery === 'welcome' || stepFromQuery === 'skills' || stepFromQuery === 'analysis') {
-      setCurrentStep(stepFromQuery);
+    const step = searchParams.get('step');
+    if (step === 'welcome' || step === 'skills' || step === 'analysis') {
+      setCurrentStep(step);
+    } else {
+      // Default to 'welcome' if no valid step is provided in the URL
+      router.replace('/?step=welcome');
     }
-
-    if (savedProfile) {
-      setUserProfile(savedProfile);
-      setUserSkills(savedProfile.skills);
-
-      if (savedAnalysis && !LocalStorageManager.isDataStale(savedAnalysis.lastAnalyzed, 24)) {
-        setAiAnalysis(savedAnalysis);
-        if (!stepFromQuery) setCurrentStep('analysis');
-      } else if (savedProfile.skills.length > 0) {
-        if (!stepFromQuery) setCurrentStep('skills');
-      }
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('step', currentStep);
-    router.replace(url.pathname + url.search);
-  }, [currentStep, router]);
+  }, [searchParams, router]);
 
   const handleGetStarted = useCallback(() => setCurrentStep('skills'), []);
 
@@ -114,7 +100,8 @@ export default function HomePage() {
   const handleShowCoach = useCallback(() => setShowCoach(true), []);
 
   const handleGenerateCourse = useCallback(async (skill: string) => {
-    const res = await Services.generateCourse(skill, 'beginner');
+    const skillsList = userSkills.map(s => s.name.toLowerCase());
+    const res = await Services.generateCourse(skill, 'beginner', skillsList);
     setGeneratedCourse(res.course || null);
     setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
     try {
@@ -127,7 +114,7 @@ export default function HomePage() {
       };
       LocalStorageManager.saveCourse(doc);
     } catch {}
-  }, []);
+  }, [userSkills]);
 
   const renderStep = () => {
     switch (currentStep) {
@@ -146,10 +133,11 @@ export default function HomePage() {
   };
 
   return (
-    <>
+    <Suspense fallback={null}>
       {renderStep()}
       {showDemo && <GuidedDemo onClose={() => setShowDemo(false)} />}
-      {aiAnalysis && <CoachChat open={showCoach} onClose={() => setShowCoach(false)} analysis={aiAnalysis} />}
-    </>
+      {aiAnalysis && <CoachChat open={showCoach} onClose={() => setShowCoach(false)} analysis={aiAnalysis} userSkills={userSkills} />}
+      <ChatLauncher userSkills={userSkills} aiAnalysis={aiAnalysis} />
+    </Suspense>
   );
 }

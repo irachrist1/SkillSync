@@ -41,7 +41,7 @@ def read_root():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>SkillSync API Docs</title>
+        <title>SkillSync AI (API Docs)</title>
         <style>
             body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif; line-height: 1.6; color: #333; max-width: 960px; margin: 20px auto; padding: 0 20px; }}
             h1, h2, h3 {{ color: #2c3e50; }}

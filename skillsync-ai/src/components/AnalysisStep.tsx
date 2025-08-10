@@ -7,10 +7,7 @@ import { JobMatches } from '@/components/JobMatches';
 import { LearningPath } from '@/components/LearningPath';
 import { NextLevelJobs } from '@/components/NextLevelJobs';
 import { CourseOutline } from '@/components/CourseOutline';
-import { CoachChat } from '@/components/CoachChat';
 import { AIAnalysis, UserSkill } from '@/types';
-import { Services } from '@/lib/services';
-import { LocalStorageManager } from '@/lib/localStorage';
 
 interface AnalysisStepProps {
   aiAnalysis: AIAnalysis;

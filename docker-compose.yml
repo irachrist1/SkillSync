@@ -5,6 +5,8 @@ services:
       - "7800:7800"
     env_file:
       - ./skillsyncAPI/.env
+    environment:
+      - DEV_MODE=true
     networks:
       - skillsync_network
 

@@ -4,8 +4,9 @@ import './globals.css';
 import Link from 'next/link';
 import { NavigationMenu } from '@/components/navigation/NavigationMenu';
 import { ProfileMenu } from '@/components/navigation/ProfileMenu';
+import { Suspense } from 'react';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { ChatLauncher } from '@/components/ChatLauncher';
+// import { ChatLauncher } from '@/components/ChatLauncher';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -77,7 +78,9 @@ export default function RootLayout({
 
             {/* Main Content */}
             <main className="flex-1">
-              {children}
+              <Suspense fallback={null}>
+                {children}
+              </Suspense>
             </main>
 
             {/* Footer */}
@@ -128,7 +131,7 @@ export default function RootLayout({
               </div>
             </footer>
           </div>
-          <ChatLauncher />
+          
         </ErrorBoundary>
       </body>
     </html>

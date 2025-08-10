@@ -9,6 +9,7 @@ const API_BASE_URL = '/api'; // Use relative path to call the Next.js proxy
  * @returns The JSON response.
  */
 async function post<T>(endpoint: string, body: unknown): Promise<T> {
+  console.log(`Sending POST request to ${endpoint} with body:`, body);
   const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
     method: 'POST',
     headers: {
@@ -44,8 +45,8 @@ export const Services = {
    * @param level The user's level in that skill.
    * @returns The generated course.
    */
-  generateCourse: (target_skill: string, level: string): Promise<{ course: Course }> => {
-    return post<{ course: Course }>('generate-course', { target_skill, level });
+  generateCourse: (target_skill: string, level: string, userSkills: string[]): Promise<{ course: Course }> => {
+    return post<{ course: Course }>('generate-course', { target_skill, level, user_skills: userSkills });
   },
 
   /**
@@ -71,7 +72,7 @@ export const Services = {
    * @param question The user's question.
    * @returns The coach's response and follow-up suggestions.
    */
-  coachChat: (role: string, analysis: any, question: string): Promise<{ chat: { answer: string; follow_ups: string[] } }> => {
-    return post<{ chat: { answer: string; follow_ups: string[] } }>('coach-chat', { role, analysis, question });
+  coachChat: (role: string, analysis: any, question: string, userSkills: string[]): Promise<{ chat: { answer: string; follow_ups: string[] } }> => {
+    return post<{ chat: { answer: string; follow_ups: string[] } }>('coach-chat', { role, analysis, question, user_skills: userSkills });
   },
 };
