@@ -1,0 +1,58 @@
+[
+  {
+    "categoryId": "web-development",
+    "name": "Web Development",
+    "description": "Frontend and backend web technologies",
+    "demandLevel": "very-high",
+    "avgSalaryImpact": 350000,
+    "skills": ["HTML/CSS", "JavaScript", "React", "Node.js", "TypeScript", "Next.js", "MySQL", "MongoDB"]
+  },
+  {
+    "categoryId": "data-analysis",
+    "name": "Data Analysis & Analytics",
+    "description": "Data processing, analytics, and business intelligence",
+    "demandLevel": "very-high",
+    "avgSalaryImpact": 400000,
+    "skills": ["Excel Advanced", "SQL", "Python", "Power BI", "Tableau", "Data Visualization", "Statistics"]
+  },
+  {
+    "categoryId": "digital-marketing",
+    "name": "Digital Marketing",
+    "description": "Online marketing and social media operations",
+    "demandLevel": "high",
+    "avgSalaryImpact": 280000,
+    "skills": ["Social Media Marketing", "Google Ads", "SEO", "Content Marketing", "Marketing Analytics", "Copywriting"]
+  },
+  {
+    "categoryId": "fintech",
+    "name": "FinTech & Mobile Money",
+    "description": "Financial technology and payments infrastructure",
+    "demandLevel": "very-high",
+    "avgSalaryImpact": 500000,
+    "skills": ["Mobile Money Integration", "Payment APIs", "Financial APIs", "Regulatory Compliance", "Risk Management", "API Development"]
+  },
+  {
+    "categoryId": "mobile-development",
+    "name": "Mobile App Development",
+    "description": "Android and cross-platform development",
+    "demandLevel": "high",
+    "avgSalaryImpact": 450000,
+    "skills": ["React Native", "Flutter", "Kotlin", "Firebase", "Mobile UI/UX", "Mobile Security"]
+  },
+  {
+    "categoryId": "cybersecurity",
+    "name": "Cybersecurity",
+    "description": "Information security and resilience",
+    "demandLevel": "high",
+    "avgSalaryImpact": 600000,
+    "skills": ["Network Security", "Security Auditing", "Incident Response", "Risk Assessment", "Cloud Security"]
+  },
+  {
+    "categoryId": "project-management",
+    "name": "Project Management",
+    "description": "Delivery and stakeholder management",
+    "demandLevel": "high",
+    "avgSalaryImpact": 320000,
+    "skills": ["Agile/Scrum", "Project Planning", "Stakeholder Management", "Budget Management", "JIRA", "Communication"]
+  }
+]

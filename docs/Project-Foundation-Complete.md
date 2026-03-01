@@ -45,7 +45,7 @@
 
 ### Next.js Configuration
 - **Metadata Warnings**: Fixed by adding `metadataBase` and separate viewport export
-- **Security**: Upgraded Next.js to 14.2.31 (0 vulnerabilities)
+- **Security**: Upgraded Next.js to 14.2.31 (historical status; re-run audit for current status)
 - **Performance**: Optimized build configuration and removed conflicts
 
 ### Dependency Management
@@ -111,7 +111,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - [x] Error boundaries catching issues
 - [x] No console errors or warnings
 - [x] TypeScript strict mode passing
-- [x] npm audit shows 0 vulnerabilities
+- [x] npm audit was clean at the time of foundation setup (re-run before release)
 
 ## 🎯 Next Steps: Phase 1 Development
 

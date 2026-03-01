@@ -16,7 +16,7 @@ feat: Complete SkillSync AI Next.js foundation with Rwanda job matching
 - Add error boundaries and loading states for production quality
 - Configure environment variables for Gemini API integration
 - Fix Tailwind v3/v4 configuration mismatch for proper styling
-- Upgrade Next.js to 14.2.31 for security (0 vulnerabilities)
+- Upgrade Next.js to 14.2.31 for security (audit status should be re-verified in current environment)
 - Add Rwanda-specific job market data from kLab, SOLVIT Africa
 - Implement mobile-optimized design for Rwanda smartphone users
 - Create comprehensive documentation and setup guides
@@ -108,7 +108,7 @@ Ready for: Phase 1 AI features development
 - `autoprefixer` - CSS vendor prefixes
 
 ## Security & Performance
-- 🔒 npm audit: 0 vulnerabilities
+- 🔒 npm audit: historical snapshot only; re-run in current environment
 - ⚡ Next.js 14.2.31 (latest stable)
 - 📱 Mobile-optimized performance
 - 🛡️ TypeScript strict mode enabled

@@ -16,7 +16,7 @@ Content rendered without styling because Tailwind was misconfigured (v4-style Po
 - Remove `node_modules`, `.next`, and lockfile, then reinstall and start dev server.
 
 ### Security/Audit
-- npm audit flagged critical advisories in older Next. Upgraded to `next@14.2.31`. After a clean reinstall, npm audit reported 0 vulnerabilities.
+- npm audit flagged critical advisories in older Next. Upgraded to `next@14.2.31`. Vulnerability status should always be re-checked against current advisories.
 
 ### Windows EBUSY Lock Fix (if needed)
 - Stop any running node processes, free ports if needed, then run the clean reinstall steps again.
@@ -30,7 +30,7 @@ Content rendered without styling because Tailwind was misconfigured (v4-style Po
 - Dev server starts cleanly on `http://localhost:3000`.
 - UI styling applied (Tailwind classes working).
 - No viewport/metadata warnings.
-- npm audit shows 0 vulnerabilities.
+- npm audit should be checked in the current environment before release.
 
 ### Files Touched
 - `skillsync-ai/postcss.config.js`
@@ -39,4 +39,3 @@ Content rendered without styling because Tailwind was misconfigured (v4-style Po
 
 ### Notes
 - Set `NEXT_PUBLIC_APP_URL` in `skillsync-ai/.env.local` (e.g., `http://localhost:3000`) so `metadataBase` does not fall back to localhost in production.
-

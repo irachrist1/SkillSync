@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { ConvexClientProvider } from '@/components/providers/ConvexClientProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -40,8 +41,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} antialiased bg-gray-50`}>
-        <ErrorBoundary>
-          <div className="min-h-screen flex flex-col">
+        <ConvexClientProvider>
+          <ErrorBoundary>
+            <div className="min-h-screen flex flex-col">
             {/* Header */}
             <header className="bg-white shadow-sm border-b sticky top-0 z-40">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -84,7 +86,7 @@ export default function RootLayout({
                       <span className="font-semibold text-gray-900">SkillSync AI</span>
                     </div>
                     <p className="text-gray-600 text-sm">
-                      Connecting Rwanda's talent with digital opportunities through AI-powered career intelligence.
+                      Connecting Rwanda&apos;s talent with digital opportunities through AI-powered career intelligence.
                     </p>
                   </div>
                   
@@ -111,7 +113,7 @@ export default function RootLayout({
                 
                 <div className="border-t pt-8 mt-8 text-center text-sm text-gray-500">
                   <p>
-                    &copy; 2024 SkillSync AI. Built for Rwanda's digital future.
+                    &copy; 2026 SkillSync AI. Built for Rwanda&apos;s digital future.
                   </p>
                   <p className="mt-2">
                     Powered by Google Gemini AI • Data from Rwanda Job Market Analysis
@@ -119,8 +121,9 @@ export default function RootLayout({
                 </div>
               </div>
             </footer>
-          </div>
-        </ErrorBoundary>
+            </div>
+          </ErrorBoundary>
+        </ConvexClientProvider>
       </body>
     </html>
   );

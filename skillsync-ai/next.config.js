@@ -45,7 +45,7 @@ const nextConfig = {
   },
 
   // Webpack configuration for better bundling
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+  webpack: (config) => {
     // Add custom webpack configuration if needed
     return config;
   },

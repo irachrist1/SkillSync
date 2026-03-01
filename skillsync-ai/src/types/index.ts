@@ -1,31 +1,55 @@
-// Core TypeScript interfaces for SkillSync AI
+export type Currency = "RWF" | "USD";
+
+export type SkillLevel = "beginner" | "intermediate" | "advanced" | "expert";
+
+export type SkillCategoryType = "technical" | "digital" | "soft" | "language";
+
+export type JobLevel = "entry" | "mid" | "senior" | "lead";
+
+export type JobType = "full-time" | "part-time" | "contract" | "internship";
+
+export type DemandLevel = "very-high" | "high" | "medium" | "low";
+
+export type AnalysisSource = "ai" | "fallback";
+
+export type FallbackReason =
+  | "AI unavailable"
+  | "AI timeout"
+  | "AI invalid format"
+  | "AI parse failure"
+  | "Unknown AI failure"
+  | string;
+
+export type ProfileVersion = number;
+
+export interface DataFreshness {
+  latestImportAt: number | null;
+  latestJobUpdatedAt: number | null;
+  importVersion: string | null;
+}
 
 export interface UserSkill {
   id: string;
   name: string;
-  category: 'technical' | 'digital' | 'soft' | 'language';
-  level: 'beginner' | 'intermediate' | 'advanced' | 'expert';
+  category: SkillCategoryType;
+  level: SkillLevel;
   yearsExperience?: number;
   certifications?: string[];
 }
 
 export interface UserProfile {
   id: string;
+  userId: string;
   skills: UserSkill[];
-  experience: string;
-  education?: string;
-  location: string;
+  experienceText: string;
   preferredIndustries: string[];
-  salaryExpectation?: {
-    min: number;
-    max: number;
-    currency: 'RWF' | 'USD';
-  };
-  lastUpdated: Date;
+  version: ProfileVersion;
+  updatedAt: number;
 }
 
 export interface JobOpportunity {
   id: string;
+  externalId: string;
   title: string;
   company: string;
   location: string;
@@ -33,61 +57,41 @@ export interface JobOpportunity {
   salaryRange: {
     min: number;
     max: number;
-    currency: 'RWF' | 'USD';
+    currency: Currency;
   };
   requiredSkills: string[];
-  preferredSkills?: string[];
-  experienceLevel: 'entry' | 'mid' | 'senior' | 'lead';
+  preferredSkills: string[];
+  experienceLevel: JobLevel;
   description: string;
-  jobType: 'full-time' | 'part-time' | 'contract' | 'internship';
+  jobType: JobType;
   isRemote: boolean;
-  postedDate: Date;
+  postedAt: number;
+  source: string;
+  active: boolean;
   matchScore?: number;
+  missingSkills?: string[];
 }
 
 export interface SkillGap {
   skill: string;
-  importance: 'critical' | 'high' | 'medium' | 'low';
-  timeToLearn: string; // e.g., "2-4 weeks"
-  salaryImpact: number; // potential salary increase in RWF
-  opportunities: number; // number of additional jobs this unlocks
+  importance: "critical" | "high" | "medium" | "low";
+  timeToLearn: string;
+  salaryImpact: number;
+  opportunities: number;
   learningResources: LearningResource[];
-}
-
-export interface LearningRecommendation {
-  currentOpportunities: JobOpportunity[];
-  skillGaps: SkillGap[];
-  nextLevelOpportunities: JobOpportunity[];
-  learningPath: LearningPath;
-  salaryProjection: {
-    current: number;
-    potential: number;
-    timeframe: string;
-  };
 }
 
 export interface LearningResource {
   id: string;
   title: string;
-  type: 'video' | 'course' | 'article' | 'tutorial' | 'project' | 'certification';
+  type: "video" | "course" | "article" | "tutorial" | "project" | "certification";
   provider: string;
   url: string;
   duration: string;
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
-  cost: 'free' | 'paid';
+  difficulty: "beginner" | "intermediate" | "advanced";
+  cost: "free" | "paid";
   rating?: number;
-  description: string;
-}
-
-export interface LearningPath {
-  id: string;
-  title: string;
-  description: string;
-  targetSkill: string;
-  totalDuration: string;
-  phases: LearningPhase[];
-  projects: ProjectIdea[];
-  milestones: Milestone[];
+  tags: string[];
 }
 
 export interface LearningPhase {
@@ -104,9 +108,9 @@ export interface ProjectIdea {
   title: string;
   description: string;
   skills: string[];
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: "beginner" | "intermediate" | "advanced";
   estimatedHours: number;
-  portfolioValue: 'high' | 'medium' | 'low';
+  portfolioValue: "high" | "medium" | "low";
 }
 
 export interface Milestone {
@@ -117,12 +121,38 @@ export interface Milestone {
   reward?: string;
 }
 
+export interface LearningPath {
+  id: string;
+  title: string;
+  description: string;
+  targetSkill: string;
+  totalDuration: string;
+  phases: LearningPhase[];
+  projects: ProjectIdea[];
+  milestones: Milestone[];
+}
+
+export interface LearningRecommendation {
+  currentOpportunityIds: string[];
+  nextLevelOpportunityIds: string[];
+  skillGaps: SkillGap[];
+  learningPath: LearningPath;
+  salaryProjection: {
+    current: number;
+    potential: number;
+    timeframe: string;
+  };
+}
+
 export interface AIAnalysis {
-  userProfile: UserProfile;
-  currentOpportunities: JobOpportunity[];
+  id: string;
+  userId: string;
+  profileVersion: ProfileVersion;
+  source: AnalysisSource;
+  fallbackReason?: FallbackReason;
   recommendations: LearningRecommendation;
   marketInsights: string[];
-  lastAnalyzed: Date;
+  createdAt: number;
 }
 
 export interface SkillCategory {
@@ -131,26 +161,33 @@ export interface SkillCategory {
   description: string;
   skills: string[];
   avgSalaryImpact: number;
-  demandLevel: 'very-high' | 'high' | 'medium' | 'low';
+  demandLevel: DemandLevel;
 }
 
-// Rwanda-specific interfaces
-export interface RwandaJobMarket {
+export interface JobFilters {
+  industry?: string;
+  level?: JobLevel;
+  remoteOnly?: boolean;
+  minSalary?: number;
+  maxSalary?: number;
+}
+
+export interface PaginatedJobMatches {
+  jobs: JobOpportunity[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
   industries: string[];
-  topSkillsInDemand: string[];
-  averageSalaries: Record<string, number>;
-  growthSectors: string[];
-  remoteWorkAvailability: number; // percentage
 }
 
-export interface LocalLearningProvider {
+export interface LearningProgress {
   id: string;
-  name: string;
-  type: 'institution' | 'bootcamp' | 'online' | 'workshop';
-  location: string;
-  specializations: string[];
-  cost: string;
-  duration: string;
-  successRate?: number;
-  partnershipWithEmployers: boolean;
+  userId: string;
+  targetSkill: string;
+  phaseId: string;
+  completedResourceIds: string[];
+  milestonesDone: string[];
+  minutesSpent: number;
+  updatedAt: number;
 }

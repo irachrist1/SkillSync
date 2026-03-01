@@ -1,230 +1,259 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { MapPin, Calendar, Briefcase, ExternalLink, Target } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { JobOpportunity, UserSkill } from '@/types';
-import { formatSalary, calculateJobMatchScore, getMatchCategory, formatTimeAgo } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import React, { useMemo, useState } from "react";
+import { Calendar, ExternalLink, Filter, MapPin, Target } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn, formatSalary, formatTimeAgo } from "@/lib/utils";
+import { JobFilters, JobOpportunity } from "@/types";
+
+type SortBy = "match" | "salary" | "recency";
+type SortDirection = "asc" | "desc";
 
 interface JobMatchesProps {
   jobs: JobOpportunity[];
-  userSkills: UserSkill[];
-  className?: string;
+  total: number;
+  page: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  industries: string[];
+  filters: JobFilters;
+  sortBy: SortBy;
+  sortDirection: SortDirection;
+  onFiltersChange: (filters: JobFilters) => void;
+  onSortChange: (sortBy: SortBy, direction: SortDirection) => void;
+  onPageChange: (nextPage: number) => void;
+  onLearnSkill: (skill: string) => void;
 }
 
-export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
-  // Calculate match scores and sort by relevance
-  const jobsWithScores = jobs
-    .map(job => ({
-      ...job,
-      matchScore: calculateJobMatchScore(userSkills, job)
-    }))
-    .sort((a, b) => b.matchScore - a.matchScore);
+function cleanFilters(filters: JobFilters): JobFilters {
+  return Object.fromEntries(
+    Object.entries(filters).filter(([, value]) => value !== undefined && value !== ""),
+  ) as JobFilters;
+}
 
-  const getJobTypeIcon = (jobType: string) => {
-    const icons = {
-      'full-time': '💼',
-      'part-time': '⏰',
-      'contract': '📝',
-      'internship': '🎓'
+function getMatchCategory(score: number): {
+  category: "excellent" | "good" | "fair" | "poor";
+  color: string;
+  description: string;
+} {
+  if (score >= 0.8) {
+    return {
+      category: "excellent",
+      color: "text-green-600",
+      description: "Excellent match - ready to apply",
     };
-    return icons[jobType as keyof typeof icons] || '💼';
-  };
-
-  const getIndustryColor = (industry: string) => {
-    const colors = {
-      'Technology': 'bg-blue-100 text-blue-800',
-      'Banking': 'bg-green-100 text-green-800',
-      'FinTech': 'bg-purple-100 text-purple-800',
-      'Tourism': 'bg-orange-100 text-orange-800',
-      'Healthcare': 'bg-red-100 text-red-800',
-      'Education': 'bg-yellow-100 text-yellow-800'
-    };
-    return colors[industry as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getMissingSkills = (job: JobOpportunity) => {
-    const userSkillNames = userSkills.map(s => s.name.toLowerCase());
-    return job.requiredSkills.filter(skill => 
-      !userSkillNames.some(userSkill => 
-        userSkill.includes(skill.toLowerCase()) || skill.toLowerCase().includes(userSkill)
-      )
-    );
-  };
-
-  if (jobsWithScores.length === 0) {
-    return (
-      <Card className={cn("", className)}>
-        <CardContent className="text-center py-12">
-          <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Job Matches Yet</h3>
-          <p className="text-gray-600 mb-4">
-            Add some skills to see personalized job opportunities in Rwanda.
-          </p>
-        </CardContent>
-      </Card>
-    );
   }
+  if (score >= 0.6) {
+    return {
+      category: "good",
+      color: "text-blue-600",
+      description: "Strong fit with minor gaps",
+    };
+  }
+  if (score >= 0.4) {
+    return {
+      category: "fair",
+      color: "text-yellow-700",
+      description: "Potential fit after focused upskilling",
+    };
+  }
+  return {
+    category: "poor",
+    color: "text-red-600",
+    description: "Longer skill path required",
+  };
+}
+
+export function JobMatches({
+  jobs,
+  total,
+  page,
+  pageSize,
+  hasNextPage,
+  industries,
+  filters,
+  sortBy,
+  sortDirection,
+  onFiltersChange,
+  onSortChange,
+  onPageChange,
+  onLearnSkill,
+}: JobMatchesProps) {
+  const [selectedJob, setSelectedJob] = useState<JobOpportunity | null>(null);
+
+  const summary = useMemo(() => {
+    const excellent = jobs.filter((job) => (job.matchScore ?? 0) >= 0.8);
+    const averageSalary =
+      excellent.length === 0
+        ? 0
+        : Math.round(
+            excellent.reduce((sum, job) => sum + (job.salaryRange.min + job.salaryRange.max) / 2, 0) /
+              excellent.length,
+          );
+
+    return {
+      excellentCount: excellent.length,
+      remoteCount: jobs.filter((job) => job.isRemote).length,
+      avgSalary: averageSalary,
+      industries: new Set(jobs.map((job) => job.industry)).size,
+    };
+  }, [jobs]);
 
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Header */}
+    <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Job Opportunities for You
-        </h2>
-        <p className="text-gray-600">
-          {jobsWithScores.length} opportunities found in Rwanda's job market, ranked by match.
-        </p>
+        <h2 className="text-2xl font-bold text-gray-900">Job Matches</h2>
+        <p className="text-gray-600">{total} opportunities ranked for your current profile.</p>
       </div>
 
-      {/* Job Cards */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            Filters and Sorting
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid md:grid-cols-4 gap-3">
+          <select
+            className="h-10 rounded-md border px-3 text-sm"
+            value={filters.industry ?? ""}
+            onChange={(event) =>
+              onFiltersChange(cleanFilters({ ...filters, industry: event.target.value || undefined }))
+            }
+          >
+            <option value="">All industries</option>
+            {industries.map((industry) => (
+              <option key={industry} value={industry}>
+                {industry}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="h-10 rounded-md border px-3 text-sm"
+            value={filters.level ?? ""}
+            onChange={(event) =>
+              onFiltersChange(
+                cleanFilters({ ...filters, level: (event.target.value as JobFilters["level"]) || undefined }),
+              )
+            }
+          >
+            <option value="">All levels</option>
+            <option value="entry">Entry</option>
+            <option value="mid">Mid</option>
+            <option value="senior">Senior</option>
+            <option value="lead">Lead</option>
+          </select>
+
+          <select
+            className="h-10 rounded-md border px-3 text-sm"
+            value={sortBy}
+            onChange={(event) => onSortChange(event.target.value as SortBy, sortDirection)}
+          >
+            <option value="match">Sort by match</option>
+            <option value="salary">Sort by salary</option>
+            <option value="recency">Sort by recency</option>
+          </select>
+
+          <div className="flex gap-2">
+            <Button
+              variant={filters.remoteOnly ? "default" : "outline"}
+              onClick={() => onFiltersChange(cleanFilters({ ...filters, remoteOnly: !filters.remoteOnly }))}
+              className="flex-1"
+            >
+              Remote only
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onSortChange(sortBy, sortDirection === "asc" ? "desc" : "asc")}
+              className="w-16"
+            >
+              {sortDirection === "asc" ? "↑" : "↓"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="space-y-4">
-        {jobsWithScores.map((job) => {
-          const matchInfo = getMatchCategory(job.matchScore);
-          const missingSkills = getMissingSkills(job);
+        {jobs.length === 0 && (
+          <Card>
+            <CardContent className="py-8 text-center text-gray-600">
+              No jobs match your current filters. Try broadening your criteria.
+            </CardContent>
+          </Card>
+        )}
+
+        {jobs.map((job) => {
+          const matchScore = job.matchScore ?? 0;
+          const matchInfo = getMatchCategory(matchScore);
+          const missingSkills = job.missingSkills ?? [];
+          const firstMissingSkill = missingSkills[0];
 
           return (
             <Card key={job.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <CardTitle className="text-xl">{job.title}</CardTitle>
-                      <Badge className={getIndustryColor(job.industry)}>
-                        {job.industry}
-                      </Badge>
-                      {job.isRemote && (
-                        <Badge variant="outline">Remote Available</Badge>
-                      )}
+                      <Badge>{job.industry}</Badge>
+                      {job.isRemote && <Badge variant="outline">Remote</Badge>}
                     </div>
-                    
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                      <div className="flex items-center gap-1">
-                        <Briefcase className="w-4 h-4" />
-                        {job.company}
-                      </div>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 flex-wrap">
                       <div className="flex items-center gap-1">
                         <MapPin className="w-4 h-4" />
-                        {job.location}
+                        {job.company} • {job.location}
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {formatTimeAgo(job.postedDate)}
+                        {formatTimeAgo(job.postedAt)}
                       </div>
                     </div>
-
-                    <CardDescription className="line-clamp-2">
-                      {job.description}
-                    </CardDescription>
+                    <CardDescription className="mt-2">{job.description}</CardDescription>
                   </div>
 
-                  <div className="text-right ml-4">
-                    <div className="text-lg font-bold text-gray-900 mb-1">
-                      {formatSalary(job.salaryRange.min)} - {formatSalary(job.salaryRange.max)}
+                  <div className="text-right min-w-[180px]">
+                    <div className="text-lg font-bold text-gray-900">
+                      {formatSalary(job.salaryRange.min, job.salaryRange.currency)} - {formatSalary(job.salaryRange.max, job.salaryRange.currency)}
                     </div>
-                    <div className="text-xs text-gray-500 mb-2">
-                      {getJobTypeIcon(job.jobType)} {job.jobType} • {job.experienceLevel}
+                    <div className="text-xs text-gray-500 capitalize mb-2">
+                      {job.jobType} • {job.experienceLevel}
                     </div>
-                    <Badge 
-                      variant={matchInfo.category === 'excellent' ? 'success' : 
-                              matchInfo.category === 'good' ? 'info' :
-                              matchInfo.category === 'fair' ? 'warning' : 'destructive'}
-                      className="text-xs"
+                    <Badge
+                      variant={
+                        matchInfo.category === "excellent"
+                          ? "success"
+                          : matchInfo.category === "good"
+                          ? "info"
+                          : matchInfo.category === "fair"
+                          ? "warning"
+                          : "destructive"
+                      }
                     >
                       <Target className="w-3 h-3 mr-1" />
-                      {Math.round(job.matchScore * 100)}% Match
+                      {Math.round(matchScore * 100)}% Match
                     </Badge>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  {/* Required Skills */}
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Required Skills</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {job.requiredSkills.map((skill) => {
-                        const hasSkill = userSkills.some(s => 
-                          s.name.toLowerCase().includes(skill.toLowerCase()) || 
-                          skill.toLowerCase().includes(s.name.toLowerCase())
-                        );
-                        return (
-                          <Badge 
-                            key={skill}
-                            variant={hasSkill ? "success" : "outline"}
-                            className="text-xs"
-                          >
-                            {skill}
-                            {hasSkill && " ✓"}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Preferred Skills */}
-                  {job.preferredSkills && job.preferredSkills.length > 0 && (
-                    <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Preferred Skills</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {job.preferredSkills.map((skill) => {
-                          const hasSkill = userSkills.some(s => 
-                            s.name.toLowerCase().includes(skill.toLowerCase()) || 
-                            skill.toLowerCase().includes(s.name.toLowerCase())
-                          );
-                          return (
-                            <Badge 
-                              key={skill}
-                              variant={hasSkill ? "info" : "outline"}
-                              className="text-xs"
-                            >
-                              {skill}
-                              {hasSkill && " ✓"}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Match Analysis */}
-                <div className={cn("p-3 rounded-lg mb-4", 
-                  matchInfo.category === 'excellent' ? 'bg-green-50 border border-green-200' :
-                  matchInfo.category === 'good' ? 'bg-blue-50 border border-blue-200' :
-                  matchInfo.category === 'fair' ? 'bg-yellow-50 border border-yellow-200' :
-                  'bg-red-50 border border-red-200'
-                )}>
-                  <div className={cn("text-sm font-medium mb-1", matchInfo.color)}>
-                    {matchInfo.description}
-                  </div>
-                  
+              <CardContent className="space-y-3">
+                <div className={cn("p-3 rounded-md border", matchInfo.color.replace("text", "border"))}>
+                  <div className={cn("text-sm font-medium", matchInfo.color)}>{matchInfo.description}</div>
                   {missingSkills.length > 0 && (
-                    <div className="text-xs text-gray-600">
-                      <span className="font-medium">Missing skills:</span> {missingSkills.join(', ')}
-                    </div>
-                  )}
-                  
-                  {matchInfo.category === 'excellent' && (
-                    <div className="text-xs text-green-700 mt-1">
-                      🎉 You're ready to apply! Your skills align perfectly with this role.
-                    </div>
+                    <div className="text-xs text-gray-600 mt-1">Missing skills: {missingSkills.join(", ")}</div>
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="flex gap-2">
-                  <Button size="sm" className="flex-1">
+                  <Button className="flex-1" onClick={() => setSelectedJob(job)}>
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View Details
                   </Button>
-                  {missingSkills.length > 0 && (
-                    <Button variant="outline" size="sm">
+                  {firstMissingSkill && (
+                    <Button variant="outline" onClick={() => onLearnSkill(firstMissingSkill)}>
                       Learn Missing Skills
                     </Button>
                   )}
@@ -235,42 +264,97 @@ export function JobMatches({ jobs, userSkills, className }: JobMatchesProps) {
         })}
       </div>
 
-      {/* Summary */}
       <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {jobsWithScores.filter(j => j.matchScore >= 0.8).length}
-              </div>
-              <div className="text-sm text-blue-700">Excellent Matches</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {formatSalary(
-                  jobsWithScores
-                    .filter(j => j.matchScore >= 0.8)
-                    .reduce((avg, job) => avg + (job.salaryRange.min + job.salaryRange.max) / 2, 0) / 
-                  Math.max(jobsWithScores.filter(j => j.matchScore >= 0.8).length, 1)
-                ).replace(/,/g, 'k').replace('RWF', '')}
-              </div>
-              <div className="text-sm text-green-700">Avg Salary</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-purple-600">
-                {jobsWithScores.filter(j => j.isRemote).length}
-              </div>
-              <div className="text-sm text-purple-700">Remote Jobs</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-orange-600">
-                {new Set(jobsWithScores.map(j => j.industry)).size}
-              </div>
-              <div className="text-sm text-orange-700">Industries</div>
-            </div>
+        <CardContent className="pt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <div className="text-2xl font-bold text-blue-600">{summary.excellentCount}</div>
+            <div className="text-sm text-blue-700">Excellent Matches</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-green-600">{summary.avgSalary ? formatSalary(summary.avgSalary).replace("RWF", "") : "-"}</div>
+            <div className="text-sm text-green-700">Avg Salary</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-purple-600">{summary.remoteCount}</div>
+            <div className="text-sm text-purple-700">Remote Roles</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-orange-600">{summary.industries}</div>
+            <div className="text-sm text-orange-700">Industries</div>
           </div>
         </CardContent>
       </Card>
+
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-600">
+          Showing page {page} with {pageSize} results per page
+        </p>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => onPageChange(Math.max(1, page - 1))} disabled={page <= 1}>
+            Previous
+          </Button>
+          <Button variant="outline" onClick={() => onPageChange(page + 1)} disabled={!hasNextPage}>
+            Next
+          </Button>
+        </div>
+      </div>
+
+      {selectedJob && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>{selectedJob.title}</CardTitle>
+              <CardDescription>
+                {selectedJob.company} • {selectedJob.location}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">Required Skills</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedJob.requiredSkills.map((skill) => (
+                    <Badge key={skill} variant="secondary">
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {selectedJob.preferredSkills.length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2">Preferred Skills</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedJob.preferredSkills.map((skill) => (
+                      <Badge key={skill} variant="outline">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(selectedJob.missingSkills ?? []).length > 0 && (
+                <div>
+                  <h4 className="font-semibold mb-2">Skill Gaps</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(selectedJob.missingSkills ?? []).map((skill) => (
+                      <Button key={skill} variant="outline" size="sm" onClick={() => onLearnSkill(skill)}>
+                        {skill}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button variant="ghost" onClick={() => setSelectedJob(null)}>
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

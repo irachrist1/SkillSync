@@ -1,0 +1,122 @@
+[
+  {
+    "resourceId": "rw-react-course-001",
+    "title": "React Fundamentals",
+    "provider": "freeCodeCamp",
+    "type": "course",
+    "url": "https://www.freecodecamp.org/learn/front-end-development-libraries/",
+    "duration": "30 hours",
+    "difficulty": "beginner",
+    "cost": "free",
+    "rating": 4.8,
+    "tags": ["React", "JavaScript", "Frontend"]
+  },
+  {
+    "resourceId": "rw-node-course-002",
+    "title": "Node.js and Express APIs",
+    "provider": "Coursera",
+    "type": "course",
+    "url": "https://www.coursera.org/specializations/meta-back-end-developer",
+    "duration": "40 hours",
+    "difficulty": "intermediate",
+    "cost": "paid",
+    "rating": 4.6,
+    "tags": ["Node.js", "API Development", "JavaScript"]
+  },
+  {
+    "resourceId": "rw-sql-path-003",
+    "title": "SQL for Data Analysis",
+    "provider": "Khan Academy",
+    "type": "course",
+    "url": "https://www.khanacademy.org/computing/computer-programming/sql",
+    "duration": "18 hours",
+    "difficulty": "beginner",
+    "cost": "free",
+    "rating": 4.5,
+    "tags": ["SQL", "Data Analysis"]
+  },
+  {
+    "resourceId": "rw-powerbi-004",
+    "title": "Power BI Dashboard Labs",
+    "provider": "Microsoft Learn",
+    "type": "tutorial",
+    "url": "https://learn.microsoft.com/en-us/training/powerplatform/power-bi/",
+    "duration": "20 hours",
+    "difficulty": "intermediate",
+    "cost": "free",
+    "rating": 4.4,
+    "tags": ["Power BI", "Data Visualization", "Business Intelligence"]
+  },
+  {
+    "resourceId": "rw-mobile-money-005",
+    "title": "Mobile Money API Integration",
+    "provider": "kLab",
+    "type": "course",
+    "url": "https://klab.rw/",
+    "duration": "24 hours",
+    "difficulty": "intermediate",
+    "cost": "free",
+    "rating": 4.3,
+    "tags": ["Mobile Money Integration", "FinTech", "API Development"]
+  },
+  {
+    "resourceId": "rw-cyber-006",
+    "title": "Cybersecurity Incident Response",
+    "provider": "Cisco Skills for All",
+    "type": "course",
+    "url": "https://skillsforall.com/",
+    "duration": "25 hours",
+    "difficulty": "intermediate",
+    "cost": "free",
+    "rating": 4.5,
+    "tags": ["Incident Response", "Network Security", "Cybersecurity"]
+  },
+  {
+    "resourceId": "rw-agile-007",
+    "title": "Agile Project Management",
+    "provider": "Google Career Certificates",
+    "type": "course",
+    "url": "https://grow.google/certificates/project-management/",
+    "duration": "40 hours",
+    "difficulty": "beginner",
+    "cost": "paid",
+    "rating": 4.7,
+    "tags": ["Agile/Scrum", "Project Planning", "Stakeholder Management"]
+  },
+  {
+    "resourceId": "rw-nextjs-008",
+    "title": "Next.js Production Apps",
+    "provider": "Vercel",
+    "type": "tutorial",
+    "url": "https://nextjs.org/learn",
+    "duration": "16 hours",
+    "difficulty": "intermediate",
+    "cost": "free",
+    "rating": 4.6,
+    "tags": ["Next.js", "TypeScript", "React"]
+  },
+  {
+    "resourceId": "rw-portfolio-009",
+    "title": "Tech Portfolio Playbook",
+    "provider": "YouTube",
+    "type": "video",
+    "url": "https://www.youtube.com/watch?v=n4R2E7O-Ngo",
+    "duration": "3 hours",
+    "difficulty": "beginner",
+    "cost": "free",
+    "rating": 4.2,
+    "tags": ["Portfolio", "Career", "Interview"]
+  },
+  {
+    "resourceId": "rw-python-010",
+    "title": "Python for Data Work",
+    "provider": "freeCodeCamp",
+    "type": "course",
+    "url": "https://www.freecodecamp.org/learn/scientific-computing-with-python/",
+    "duration": "50 hours",
+    "difficulty": "beginner",
+    "cost": "free",
+    "rating": 4.8,
+    "tags": ["Python", "Data Analysis", "Automation"]
+  }
+]
