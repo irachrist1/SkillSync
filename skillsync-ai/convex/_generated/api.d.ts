@@ -12,6 +12,7 @@ import type * as admin from "../admin.js";
 import type * as analysis from "../analysis.js";
 import type * as analysisRunner from "../analysisRunner.js";
 import type * as data from "../data.js";
+import type * as discovery from "../discovery.js";
 import type * as jobs from "../jobs.js";
 import type * as lib_aiParser from "../lib/aiParser.js";
 import type * as lib_analysis from "../lib/analysis.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   analysis: typeof analysis;
   analysisRunner: typeof analysisRunner;
   data: typeof data;
+  discovery: typeof discovery;
   jobs: typeof jobs;
   "lib/aiParser": typeof lib_aiParser;
   "lib/analysis": typeof lib_analysis;

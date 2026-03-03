@@ -42,6 +42,53 @@ const resourceItem = v.object({
   tags: v.array(v.string()),
 });
 
+const careerProfileItem = v.object({
+  title: v.string(),
+  slug: v.string(),
+  description: v.string(),
+  riasecProfile: v.object({
+    realistic: v.number(),
+    investigative: v.number(),
+    artistic: v.number(),
+    social: v.number(),
+    enterprising: v.number(),
+    conventional: v.number(),
+  }),
+  valuesProfile: v.object({
+    impact: v.number(),
+    income: v.number(),
+    autonomy: v.number(),
+    balance: v.number(),
+    growth: v.number(),
+    stability: v.number(),
+  }),
+  personalityProfile: v.optional(
+    v.object({
+      openness: v.number(),
+      conscientiousness: v.number(),
+      extraversion: v.number(),
+    }),
+  ),
+  environmentProfile: v.optional(
+    v.object({
+      teamSize: v.optional(v.string()),
+      pace: v.optional(v.string()),
+      structure: v.optional(v.string()),
+    }),
+  ),
+  salaryRange: v.optional(
+    v.object({
+      min: v.number(),
+      max: v.number(),
+      currency: v.string(),
+    }),
+  ),
+  sector: v.string(),
+  growthOutlook: v.string(),
+  requiredEducation: v.string(),
+  isActive: v.boolean(),
+});
+
 export const importCuratedData = mutation({
   args: {
     token: v.string(),
@@ -141,6 +188,47 @@ export const importCuratedData = mutation({
       resources: args.resources.length,
       marketInsights: args.marketInsights.length,
       version: args.version,
+    };
+  },
+});
+
+export const importCareerProfiles = mutation({
+  args: {
+    token: v.string(),
+    profiles: v.array(careerProfileItem),
+  },
+  handler: async (ctx, args) => {
+    const expectedToken = process.env.SKILLSYNC_ADMIN_IMPORT_TOKEN;
+    if (expectedToken) {
+      if (args.token !== expectedToken) {
+        throw new Error("Unauthorized import request");
+      }
+    } else if (args.token.length < 16) {
+      throw new Error("Import token does not meet minimum length requirement");
+    }
+
+    let inserted = 0;
+    let updated = 0;
+
+    for (const profile of args.profiles) {
+      const existing = await ctx.db
+        .query("careerProfiles")
+        .withIndex("by_slug", (q) => q.eq("slug", profile.slug))
+        .first();
+
+      if (existing) {
+        await ctx.db.patch(existing._id, profile);
+        updated += 1;
+      } else {
+        await ctx.db.insert("careerProfiles", profile);
+        inserted += 1;
+      }
+    }
+
+    return {
+      inserted,
+      updated,
+      total: args.profiles.length,
     };
   },
 });

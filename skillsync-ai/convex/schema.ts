@@ -110,4 +110,102 @@ export default defineSchema({
     status: v.union(v.literal("success"), v.literal("failed")),
     errors: v.array(v.string()),
   }).index("by_dataset_version", ["datasetType", "version"]),
+
+  assessmentResults: defineTable({
+    deviceId: v.string(),
+    answers: v.array(
+      v.object({
+        questionId: v.number(),
+        value: v.number(),
+      }),
+    ),
+    riasecScores: v.object({
+      realistic: v.number(),
+      investigative: v.number(),
+      artistic: v.number(),
+      social: v.number(),
+      enterprising: v.number(),
+      conventional: v.number(),
+    }),
+    valuesScores: v.object({
+      impact: v.number(),
+      income: v.number(),
+      autonomy: v.number(),
+      balance: v.number(),
+      growth: v.number(),
+      stability: v.number(),
+    }),
+    bigFiveScores: v.object({
+      openness: v.number(),
+      conscientiousness: v.number(),
+      extraversion: v.number(),
+    }),
+    environment: v.object({
+      teamSize: v.string(),
+      pace: v.string(),
+    }),
+    careerMatches: v.array(
+      v.object({
+        careerId: v.string(),
+        careerTitle: v.string(),
+        matchScore: v.number(),
+        reasoning: v.string(),
+        sector: v.optional(v.string()),
+        interestScore: v.optional(v.number()),
+        valueScore: v.optional(v.number()),
+        personalityScore: v.optional(v.number()),
+        environmentScore: v.optional(v.number()),
+      }),
+    ),
+    completedAt: v.number(),
+  }).index("by_deviceId", ["deviceId"]),
+
+  careerProfiles: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    description: v.string(),
+    riasecProfile: v.object({
+      realistic: v.number(),
+      investigative: v.number(),
+      artistic: v.number(),
+      social: v.number(),
+      enterprising: v.number(),
+      conventional: v.number(),
+    }),
+    valuesProfile: v.object({
+      impact: v.number(),
+      income: v.number(),
+      autonomy: v.number(),
+      balance: v.number(),
+      growth: v.number(),
+      stability: v.number(),
+    }),
+    personalityProfile: v.optional(
+      v.object({
+        openness: v.number(),
+        conscientiousness: v.number(),
+        extraversion: v.number(),
+      }),
+    ),
+    environmentProfile: v.optional(
+      v.object({
+        teamSize: v.optional(v.string()),
+        pace: v.optional(v.string()),
+        structure: v.optional(v.string()),
+      }),
+    ),
+    salaryRange: v.optional(
+      v.object({
+        min: v.number(),
+        max: v.number(),
+        currency: v.string(),
+      }),
+    ),
+    sector: v.string(),
+    growthOutlook: v.string(),
+    requiredEducation: v.string(),
+    isActive: v.boolean(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_active", ["isActive"]),
 });
